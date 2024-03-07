@@ -12,3 +12,9 @@
   * `./ethereum-wallet-generator-nodes master --prefix=0x0000 --suffix=9999`
 * 任意节点运行, 手机, 电脑, 台式机 (会统一从服务端拉取配置, 然后上报进度)
     * `./ethereum-wallet-generator-nodes node --server={$url}`
+
+## 已生成成功
+* `0x0000f31fE398080ef162841Cae9111735C919999`
+
+![运行图](assets/2.png)
+![运行图](assets/3.png)
