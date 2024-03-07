@@ -124,7 +124,7 @@ func (m *Master) buildContent(renderNodes *orderedmap.OrderedMap[string, *NodePr
 		}
 	})
 	runTime := int64(time.Now().Sub(m.StartAt).Seconds())
-	process := (float64(walletCount) / float64(m.Config.MayCount)) * 100
+	process := (float64(genCount) / float64(m.Config.MayCount)) * 100
 
 	tableBuf := &bytes.Buffer{}
 	table := tablewriter.NewWriter(tableBuf)
