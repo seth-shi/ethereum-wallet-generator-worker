@@ -1,6 +1,10 @@
 # ethereum-wallet-generator-nodes
 
 ## 分布式生成钱包
+* 公网服务器运行`master`
+
+![运行图](assets/0.png)
+* 任意地方运行你的`node`, 甚至在`github`的`codespace`都可以, 但是不建议
 
 ![运行图](assets/1.png)
 
