@@ -154,29 +154,10 @@ func (m *Master) buildContent(renderNodes *orderedmap.OrderedMap[string, *NodePr
 		"总找到",
 		"后缀",
 	})
-	data = append(data, []string{
-		"--------------",
-		"--------------",
-		"--------------",
-		"--------------",
-		"--------------",
-		"--------------",
-	})
-	data = append(data, []string{
-		"--------------",
-		"--------------",
-		"--------------",
-		"--------------",
-		"--------------",
-		"--------------",
-	})
-	t := int64(float64(m.Config.MayCount) / speed)
-	if t <= 0 {
-		t = 0
-	}
+
 	data = append(data, []string{
 		timeToString(runTime),
-		timeToString(t),
+		timeToString(int64(float64(m.Config.MayCount) / speed)),
 		m.Config.Prefix,
 		fmt.Sprintf("%d", genCount),
 		fmt.Sprintf("%d", walletCount),

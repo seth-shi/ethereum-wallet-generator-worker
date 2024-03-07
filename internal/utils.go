@@ -39,7 +39,7 @@ func IPV4() string {
 
 func timeToString(SubTime int64) string {
 
-	if SubTime == 0 {
+	if SubTime <= 0 {
 		return ""
 	}
 
