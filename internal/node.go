@@ -20,16 +20,13 @@ type Node struct {
 	Name string
 
 	// 总量
-	TotalCount atomic.Uint64
-	FoundCount atomic.Int32
-	// 每次上报之后清空
-	// 用以速度
-	OnceCount atomic.Int32
-	OnceUnix  atomic.Int64
+	TotalCount  atomic.Uint64
+	FoundCount  atomic.Int32
+	RecentCount atomic.Int32
+	StartAt     int64
 
+	// 数据保存
 	FilePoint *os.File
-
-	StartAt time.Time
 
 	// 服务端地址
 	Host string `json:"-"`
@@ -45,6 +42,8 @@ type Node struct {
 
 	// 请求
 	HttpClient *resty.Client
+
+	OutputString atomic.Pointer[string]
 }
 
 func NewNode(host string, cfg GetConfigRequest, c uint) (*Node, error) {
@@ -62,6 +61,7 @@ func NewNode(host string, cfg GetConfigRequest, c uint) (*Node, error) {
 		Name:       generateNodeName(),
 		Cip:        getCipher(cfg.Key),
 		Config:     cfg,
+		StartAt:    time.Now().Unix(),
 		HttpClient: resty.New().SetTimeout(time.Second * 5),
 	}, nil
 }
@@ -71,11 +71,40 @@ func (n *Node) Run() {
 	// 启动上报一次
 	MustError(n.reportServer(nil))
 	for i := 0; i < int(n.C); i++ {
-		go n.run()
+		go n.loopMatchWallets()
 	}
 
 	// 定时上报状态
-	n.timerReportServer()
+	go n.timerReportServer()
+
+	// 刷新输出
+	n.timerOutput()
+}
+func (n *Node) speed(nowUnix int64) float64 {
+	var speed = 0.0
+	diff := nowUnix - n.StartAt
+	if diff > 0 {
+		speed = float64(n.TotalCount.Load()) / float64(diff)
+	}
+	return speed
+}
+func (n *Node) timerOutput() {
+	timer := time.NewTicker(time.Second)
+	for ts := range timer.C {
+
+		tm.Clear()
+		tm.MoveCursor(0, 0)
+		// 永远返回不失败
+		_, _ = tm.Println(fmt.Sprintf("节点名:%s 线程*%d 服务器:%s", n.Name, n.C, n.Host))
+		_, _ = tm.Println(fmt.Sprintf(
+			"实时速度: %.2f钱包/秒 总生成:%d 总找到:%d",
+			n.speed(ts.Unix()),
+			n.TotalCount.Load(),
+			n.FoundCount.Load(),
+		))
+		_, _ = tm.Println(*n.OutputString.Load())
+		tm.Flush()
+	}
 }
 
 func (n *Node) timerReportServer() {
@@ -90,7 +119,7 @@ func (n *Node) timerReportServer() {
 	}
 }
 
-func (n *Node) run() {
+func (n *Node) loopMatchWallets() {
 
 	for {
 		if newWalletData := n.matchNewWallet(); newWalletData != nil {
@@ -121,7 +150,7 @@ func (n *Node) storeWalletData(data *Wallet) error {
 func (n *Node) matchNewWallet() *Wallet {
 	defer func() {
 		n.TotalCount.Add(1)
-		n.OnceCount.Add(1)
+		n.RecentCount.Add(1)
 	}()
 
 	wallet, err := newWallet()
@@ -145,27 +174,21 @@ func (n *Node) matchNewWallet() *Wallet {
 
 func (n *Node) reportServer(wa *Wallet) (err error) {
 
-	now := time.Now().Unix()
-	recentCount := n.OnceCount.Swap(0)
-	lastUnix := n.OnceUnix.Swap(now)
+	nowUnix := time.Now().Unix()
+	recentCount := n.RecentCount.Load()
 	defer func() {
 		if err != nil {
-			// 恢复数量
-			n.OnceCount.Add(recentCount)
-			n.OnceUnix.Add(lastUnix)
+			// 恢复数量, 中途可能数量增加了
+			n.RecentCount.Add(recentCount)
 		}
 	}()
 
 	// 计算时间
-	var speed = 1.0
-	if diffSeconds := float64(now - lastUnix); diffSeconds > 0 {
-		speed = float64(recentCount) / diffSeconds
-	}
 	progressReq := &NodeProgress{
 		Name:       n.Name,
 		Count:      int(recentCount),
 		Found:      int(n.FoundCount.Load()),
-		Speed:      speed,
+		Speed:      n.speed(nowUnix),
 		WalletData: wa,
 	}
 	data, _ := json.Marshal(progressReq)
@@ -184,13 +207,7 @@ func (n *Node) reportServer(wa *Wallet) (err error) {
 		return err
 	}
 
-	tm.Clear()
-	tm.MoveCursor(0, 0)
-	// 永远返回不失败
-	_, _ = tm.Println(fmt.Sprintf("节点名:%s 线程*%d 服务器:%s", n.Name, n.C, n.Host))
-	_, _ = tm.Println(fmt.Sprintf("总生成:%d 总找到:%d", n.TotalCount.Load(), n.FoundCount.Load()))
-	_, _ = tm.Println(bodyContent)
-	tm.Flush()
+	n.OutputString.Swap(&bodyContent)
 
 	return nil
 }

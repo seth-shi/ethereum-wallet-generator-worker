@@ -121,6 +121,7 @@ func (m *Master) buildContent(renderNodes *orderedmap.OrderedMap[string, *NodePr
 			strconv.Itoa(item.Count),
 			strconv.Itoa(item.Found),
 			fmt.Sprintf("%.2f 钱包/秒", item.Speed),
+			item.LastActiveAt.Format(time.DateTime),
 		}
 	})
 	runTime := int64(time.Now().Sub(m.StartAt).Seconds())
@@ -128,8 +129,17 @@ func (m *Master) buildContent(renderNodes *orderedmap.OrderedMap[string, *NodePr
 
 	tableBuf := &bytes.Buffer{}
 	table := tablewriter.NewWriter(tableBuf)
-	table.SetHeader([]string{"#", "节点", "已生成", "已找到", "速度"})
+	table.SetHeader([]string{"#", "节点", "已生成", "已找到", "速度", "最近活跃时间"})
 	data = append(data, []string{
+		"--------------",
+		"--------------",
+		"--------------",
+		"--------------",
+		"--------------",
+		"--------------",
+	})
+	data = append(data, []string{
+		"--------------",
 		"--------------",
 		"--------------",
 		"--------------",
@@ -139,11 +149,21 @@ func (m *Master) buildContent(renderNodes *orderedmap.OrderedMap[string, *NodePr
 	data = append(data, []string{
 		"运行时间",
 		"预计时间",
-		"",
-		"总生成/预计要",
-		"总找到/进度",
+		"前缀",
+		"总生成",
+		"总找到",
+		"后缀",
 	})
 	data = append(data, []string{
+		"--------------",
+		"--------------",
+		"--------------",
+		"--------------",
+		"--------------",
+		"--------------",
+	})
+	data = append(data, []string{
+		"--------------",
 		"--------------",
 		"--------------",
 		"--------------",
@@ -157,16 +177,18 @@ func (m *Master) buildContent(renderNodes *orderedmap.OrderedMap[string, *NodePr
 	data = append(data, []string{
 		timeToString(runTime),
 		timeToString(t),
-		"",
+		m.Config.Prefix,
 		fmt.Sprintf("%d", genCount),
 		fmt.Sprintf("%d", walletCount),
+		m.Config.Suffix,
 	})
 
 	table.SetFooter([]string{
 		"生成速度",
 		fmt.Sprintf("%.2f 钱包/秒", speed),
-		"",
+		"预计要",
 		fmt.Sprintf("%d", m.Config.MayCount),
+		"进度",
 		fmt.Sprintf("%.2f%s", process, "%"),
 	})
 	table.AppendBulk(data)
@@ -182,6 +204,7 @@ func (m *Master) updateNode(pro *NodeProgress) {
 	if oldPro, exists := m.Nodes.Get(pro.Name); exists {
 		pro.Count += oldPro.Count
 	}
+	pro.LastActiveAt = time.Now()
 	m.Nodes.Set(pro.Name, pro)
 }
 func (m *Master) StartWebServer() {
