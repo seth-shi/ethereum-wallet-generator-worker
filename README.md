@@ -1,4 +1,5 @@
 ## 分布式生成钱包
+* github地址 [https://github.com/seth-shi/ethereum-wallet-generator-nodes](https://github.com/seth-shi/ethereum-wallet-generator-nodes)
 
 ![运行图](assets/1.png)
 
