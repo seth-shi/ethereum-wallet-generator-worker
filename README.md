@@ -10,7 +10,7 @@
 |-----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | **Linux**    | `wget https://github.com/seth-shi/ethereum-wallet-generator-nodes/releases/download/v9.9.9/ethereum-wallet-generator-nodes-v9.9.9-linux-amd64.tar.gz`                                                                                                                                              |
 | **Windows** | 点击下载[https://github.com/seth-shi/ethereum-wallet-generator-nodes/releases/download/v9.9.9/ethereum-wallet-generator-nodes-v9.9.9-windows-amd64.zip](https://github.com/seth-shi/ethereum-wallet-generator-nodes/releases/download/v9.9.9/ethereum-wallet-generator-nodes-v9.9.9-windows-amd64.zip) |
-| **macOS** | `wget https://github.com/seth-shi/ethereum-wallet-generator-nodes/releases/download/v9.9.9/ethereum-wallet-generator-nodes-v9.9.9-darwin-amd64.tar.gz`                                                                                                                                             |
+| **macOS** | 点击下载[https://github.com/seth-shi/ethereum-wallet-generator-nodes/releases/download/v9.9.9/ethereum-wallet-generator-nodes-v9.9.9-darwin-amd64.tar.gz](https://github.com/seth-shi/ethereum-wallet-generator-nodes/releases/download/v9.9.9/ethereum-wallet-generator-nodes-v9.9.9-darwin-amd64.tar.gz)]                                                                                                                                           |
 
 ### 解压文件
 
@@ -30,11 +30,11 @@
 
 ### 节点运行, 手机, 电脑, 台式机 (会统一从服务端拉取配置, 然后上报进度)
 
-| 系统        | 命令                                                                         |
-|-----------|----------------------------------------------------------------------------|
-| **Linux**    | `./ethereum-wallet-generator-nodes  node --server={$url}`   |
-| **Windows** | `ethereum-wallet-generator-nodes.exe  node --server={$url}` |
-| **macOS** | `./ethereum-wallet-generator-nodes master  node --server={$url}`   |
+| 系统        | 命令                                                                                                   |
+|-----------|------------------------------------------------------------------------------------------------------|
+| **Linux**    | `./ethereum-wallet-generator-nodes  node --server="{$url}"`                                          |
+| **Windows** | `.\ethereum-wallet-generator-nodes node --server="{$url}"`                                           |
+| **macOS** | `./ethereum-wallet-generator-nodes master  node --server="{$url}"`                                   |
 
 ## 已生成成功
 * `0x0000f31fE398080ef162841Cae9111735C919999`
