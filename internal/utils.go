@@ -76,29 +76,32 @@ func timeToString(SubTime int64) string {
 
 func getNodeName() string {
 
-	var name string
-	var address string
+	var prefix string
+	var value string
+	var suffix string
 
 	if netInterfaces, err := net.Interfaces(); err == nil {
 		for _, netInterface := range netInterfaces {
 			macAddr := netInterface.HardwareAddr.String()
 			if len(macAddr) != 0 {
-				address = strings.ReplaceAll(strings.TrimSpace(macAddr), ":", "")
+				value = strings.ReplaceAll(strings.TrimSpace(macAddr), ":", "")
+				suffix = "mac"
 				break
 			}
 		}
 	}
 
 	if u, err := user.Current(); err == nil {
-		name = u.Name
-		if address == "" {
-			address = strings.ReplaceAll(u.Uid, "-", "")
+		prefix = u.Username
+		if value == "" {
+			value = strings.ReplaceAll(u.Uid, "-", "")
+			suffix = "uid"
 		}
 	}
 
-	address = fixLength(address, 16)
+	value = fixLength(value, 16)
 
-	return fmt.Sprintf("%s@%s", name, address)
+	return fmt.Sprintf("%s@%s-%s", prefix, suffix, value)
 }
 
 func fixLength(str string, length int) string {
