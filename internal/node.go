@@ -175,7 +175,7 @@ func (n *Node) matchNewWallet() *Wallet {
 func (n *Node) reportServer(wa *Wallet) (err error) {
 
 	nowUnix := time.Now().Unix()
-	recentCount := n.RecentCount.Load()
+	recentCount := n.RecentCount.Swap(0)
 	defer func() {
 		if err != nil {
 			// 恢复数量, 中途可能数量增加了

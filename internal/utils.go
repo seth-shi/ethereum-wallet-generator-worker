@@ -9,6 +9,7 @@ import (
 	"net"
 	"os"
 	"os/user"
+	"strings"
 	"time"
 )
 
@@ -92,7 +93,7 @@ func generateNodeName() string {
 		for _, netInterface := range netInterfaces {
 			macAddr := netInterface.HardwareAddr.String()
 			if len(macAddr) != 0 {
-				address = macAddr
+				address = strings.TrimSpace(macAddr)
 			}
 		}
 	}
