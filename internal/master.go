@@ -129,9 +129,11 @@ func (m *Master) buildContent(renderNodes *orderedmap.OrderedMap[string, *NodePr
 
 		genCount += uint64(item.Count)
 		walletCount += uint64(item.Found)
+		runAt := nowUnix - item.StartAt
 		// 如果超过一分钟无响应, 那么不要计算生成速度
 		if nowUnix-activeUnix > 60 {
 			item.Speed = 0
+			runAt = activeUnix - runAt
 		}
 		speed += item.Speed
 		return []string{
@@ -140,7 +142,7 @@ func (m *Master) buildContent(renderNodes *orderedmap.OrderedMap[string, *NodePr
 			strconv.Itoa(item.Found),
 			strconv.Itoa(item.Count),
 			fmt.Sprintf("%.2f 钱包/秒", item.Speed),
-			timeToString(nowUnix - item.StartAt),
+			timeToString(runAt),
 		}
 	})
 	runTime := int64(time.Now().Sub(m.StartAt).Seconds())
