@@ -59,7 +59,7 @@ func NewNode(host string, cfg GetConfigRequest, c uint) (*Node, error) {
 		return nil, err
 	}
 
-	key := urlObj.Query().Get(keyFieldName)
+	key := strings.TrimSpace(urlObj.Query().Get(keyFieldName))
 	if key == "" {
 		return nil, errors.New("服务端URL未包含秘钥")
 	}

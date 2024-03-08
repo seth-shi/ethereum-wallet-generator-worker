@@ -59,6 +59,7 @@ func NewMaster(port int, prefix, suffix, key string) (*Master, error) {
 		}
 	}
 
+	key = strings.TrimSpace(key)
 	if key == "" {
 		key = lo.RandomString(16, lo.LowerCaseLettersCharset)
 	}
