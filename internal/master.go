@@ -63,6 +63,10 @@ func NewMaster(port int, prefix, suffix, key string) (*Master, error) {
 		key = lo.RandomString(16, lo.LowerCaseLettersCharset)
 	}
 
+	if len(key) != keyLength {
+		return nil, errors.New("无效的秘钥,必须是16位")
+	}
+
 	return &Master{
 		Port: port,
 		Config: &GetConfigRequest{
@@ -84,7 +88,7 @@ func (m *Master) Run() {
 	tm.Clear()
 	tm.MoveCursor(0, 0)
 	_, _ = tm.Println(strings.Repeat("-", lineCharCount))
-	_, _ = tm.Println("--" + m.ServerPublic)
+	_, _ = tm.Printf("--[%s]\n", m.ServerPublic)
 	_, _ = tm.Println(strings.Repeat("-", lineCharCount))
 
 	tm.Flush()

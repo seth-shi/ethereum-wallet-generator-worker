@@ -7,7 +7,6 @@ import (
 	"log"
 	"math"
 	"net"
-	"os"
 	"os/user"
 	"strings"
 	"time"
@@ -75,54 +74,38 @@ func timeToString(SubTime int64) string {
 	return fmt.Sprintf("%d天%d时%d分%d秒", day, hour, minute, second)
 }
 
-func generateNodeName() string {
+func getNodeName() string {
 
 	var name string
 	var address string
-	if host, err := os.Hostname(); err == nil {
-		name = host
-	}
-
-	if name == "" {
-		if u, err := user.Current(); err == nil {
-			name = u.Name
-		}
-	}
 
 	if netInterfaces, err := net.Interfaces(); err == nil {
 		for _, netInterface := range netInterfaces {
 			macAddr := netInterface.HardwareAddr.String()
 			if len(macAddr) != 0 {
-				address = strings.TrimSpace(macAddr)
+				address = strings.ReplaceAll(strings.TrimSpace(macAddr), ":", "")
+				break
 			}
 		}
 	}
 
-	if address == "" {
-		address = getIpName()
+	if u, err := user.Current(); err == nil {
+		name = u.Name
+		if address == "" {
+			address = strings.ReplaceAll(u.Uid, "-", "")
+		}
 	}
+
+	address = fixLength(address, 16)
 
 	return fmt.Sprintf("%s@%s", name, address)
 }
 
-func getIpName() string {
+func fixLength(str string, length int) string {
 
-	if interfaceAddr, err := net.InterfaceAddrs(); err == nil {
-		addrLastIndex := len(interfaceAddr) - 1
-		for i, addr := range interfaceAddr {
-
-			if addrLastIndex == i {
-				return addr.String()
-			}
-
-			ipNet, isValidIpNet := addr.(*net.IPNet)
-			if isValidIpNet && !ipNet.IP.IsLoopback() {
-				if ipNet.IP.To4() != nil {
-					return ipNet.IP.String()
-				}
-			}
-		}
+	if len(str) >= length {
+		return str[:length]
 	}
 
-	return IPV4()
+	return str + strings.Repeat("0", length-len(str))
 }

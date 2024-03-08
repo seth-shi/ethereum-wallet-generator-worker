@@ -6,6 +6,7 @@ const (
 	addressPrefix = "0x"
 	keyFieldName  = "key"
 	lineCharCount = 80
+	keyLength     = 16
 )
 
 type GetConfigRequest struct {

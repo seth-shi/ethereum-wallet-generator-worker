@@ -54,22 +54,29 @@ func NewNode(host string, cfg GetConfigRequest, c uint) (*Node, error) {
 		return nil, err
 	}
 
-	urlData, err := url.Parse(host)
+	urlObj, err := url.Parse(host)
 	if err != nil {
 		return nil, err
 	}
 
-	keys, exists := urlData.Query()[keyFieldName]
-	if !exists || len(keys) == 0 {
+	key := urlObj.Query().Get(keyFieldName)
+	if key == "" {
 		return nil, errors.New("服务端URL未包含秘钥")
 	}
+
+	if len(key) != keyLength {
+		return nil, errors.New("无效的秘钥,必须是16位")
+	}
+
+	urlObj.RawQuery = ""
+	host = urlObj.String()
 
 	return &Node{
 		Host:       host,
 		FilePoint:  pf,
 		C:          c,
-		Name:       generateNodeName(),
-		Cip:        getCipher(keys[0]),
+		Name:       getNodeName(),
+		Cip:        getCipher(key),
 		Config:     cfg,
 		StartAt:    time.Now().Unix(),
 		HttpClient: resty.New().SetTimeout(time.Second * 5),
