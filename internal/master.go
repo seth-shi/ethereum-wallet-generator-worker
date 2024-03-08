@@ -123,18 +123,18 @@ func (m *Master) buildContent(renderNodes *orderedmap.OrderedMap[string, *NodePr
 	)
 
 	nowUnix := time.Now().Unix()
-	data := lo.Map(renderNodes.Keys(), func(key string, i int) []string {
+	data := lo.FilterMap(renderNodes.Keys(), func(key string, i int) ([]string, bool) {
 		item, _ := renderNodes.Get(key)
 		activeUnix := item.LastActiveAt.Unix()
 
+		// 虽然不活跃但是还是要计算总量
 		genCount += uint64(item.Count)
 		walletCount += uint64(item.Found)
-		runAt := nowUnix - item.StartAt
 		// 如果超过一分钟无响应, 那么不要计算生成速度
 		if nowUnix-activeUnix > 60 {
-			item.Speed = 0
-			runAt = activeUnix - item.StartAt
+			return nil, false
 		}
+
 		speed += item.Speed
 		return []string{
 			strconv.Itoa(i),
@@ -142,8 +142,8 @@ func (m *Master) buildContent(renderNodes *orderedmap.OrderedMap[string, *NodePr
 			strconv.Itoa(item.Found),
 			strconv.Itoa(item.Count),
 			fmt.Sprintf("%.2f 钱包/秒", item.Speed),
-			timeToString(runAt),
-		}
+			timeToString(nowUnix - item.StartAt),
+		}, true
 	})
 	runTime := int64(time.Now().Sub(m.StartAt).Seconds())
 	process := (float64(genCount) / float64(m.Config.MayCount)) * 100
@@ -170,18 +170,18 @@ func (m *Master) buildContent(renderNodes *orderedmap.OrderedMap[string, *NodePr
 	data = append(data, []string{
 		"运行时间",
 		"预计时间",
-		"前缀",
-		"总生成",
 		"总找到",
+		"总生成",
+		"前缀",
 		"后缀",
 	})
 
 	data = append(data, []string{
 		timeToString(runTime),
 		timeToString(int64(float64(m.Config.MayCount) / speed)),
-		m.Config.Prefix,
-		fmt.Sprintf("%d", genCount),
 		fmt.Sprintf("%d", walletCount),
+		fmt.Sprintf("%d", genCount),
+		m.Config.Prefix,
 		m.Config.Suffix,
 	})
 
