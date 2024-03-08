@@ -8,6 +8,7 @@ import (
 	"github.com/urfave/cli/v2"
 	"net/http"
 	"runtime"
+	"strings"
 	"time"
 )
 
@@ -32,18 +33,30 @@ var (
 				Value: "",
 				Usage: "钱包地址后缀",
 			},
+			&cli.StringFlag{
+				Name:  "key",
+				Value: "",
+				Usage: "通讯 key,如果不指定,那么自动生成",
+			},
 		},
 		Before: func(cCtx *cli.Context) (err error) {
 
-			prefix := cCtx.String("prefix")
-			suffix := cCtx.String("suffix")
-			port := cCtx.Int("port")
+			var (
+				prefix = cCtx.String("prefix")
+				suffix = cCtx.String("suffix")
+				key    = strings.TrimSpace(cCtx.String("key"))
+				port   = cCtx.Int("port")
+			)
 			if cCtx.String("prefix") == "" && cCtx.String("suffix") == "" {
 				return errors.New("钱包前缀和后缀不能同时为空")
 			}
 
 			if Master, err = internal.NewMaster(port, prefix, suffix); err != nil {
 				return
+			}
+
+			if key != "" {
+				Master.Config.Key = key
 			}
 
 			return nil
