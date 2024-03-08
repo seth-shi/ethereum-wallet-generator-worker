@@ -8,7 +8,6 @@ import (
 	"github.com/urfave/cli/v2"
 	"net/http"
 	"runtime"
-	"strings"
 	"time"
 )
 
@@ -44,19 +43,15 @@ var (
 			var (
 				prefix = cCtx.String("prefix")
 				suffix = cCtx.String("suffix")
-				key    = strings.TrimSpace(cCtx.String("key"))
+				key    = cCtx.String("key")
 				port   = cCtx.Int("port")
 			)
 			if cCtx.String("prefix") == "" && cCtx.String("suffix") == "" {
 				return errors.New("钱包前缀和后缀不能同时为空")
 			}
 
-			if Master, err = internal.NewMaster(port, prefix, suffix); err != nil {
+			if Master, err = internal.NewMaster(port, prefix, suffix, key); err != nil {
 				return
-			}
-
-			if key != "" {
-				Master.Config.Key = key
 			}
 
 			return nil

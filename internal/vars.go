@@ -4,13 +4,14 @@ import "time"
 
 const (
 	addressPrefix = "0x"
+	keyFieldName  = "key"
+	lineCharCount = 80
 )
 
 type GetConfigRequest struct {
 	MayCount uint64 `json:"-"`
 	Prefix   string `json:"prefix"`
 	Suffix   string `json:"suffix"`
-	Key      string `json:"key"`
 }
 
 type NodeProgress struct {

@@ -54,12 +54,22 @@ func NewNode(host string, cfg GetConfigRequest, c uint) (*Node, error) {
 		return nil, err
 	}
 
+	urlData, err := url.Parse(host)
+	if err != nil {
+		return nil, err
+	}
+
+	keys, exists := urlData.Query()[keyFieldName]
+	if !exists || len(keys) == 0 {
+		return nil, errors.New("服务端URL未包含秘钥")
+	}
+
 	return &Node{
 		Host:       host,
 		FilePoint:  pf,
 		C:          c,
 		Name:       generateNodeName(),
-		Cip:        getCipher(cfg.Key),
+		Cip:        getCipher(keys[0]),
 		Config:     cfg,
 		StartAt:    time.Now().Unix(),
 		HttpClient: resty.New().SetTimeout(time.Second * 5),
@@ -90,14 +100,16 @@ func (n *Node) speed(nowUnix int64) float64 {
 }
 func (n *Node) timerOutput() {
 	timer := time.NewTicker(time.Second)
+	tm.Clear()
+	tm.MoveCursor(0, 0)
+	_, _ = tm.Println(strings.Repeat("-", lineCharCount))
 	for ts := range timer.C {
 
-		tm.Clear()
-		tm.MoveCursor(0, 0)
 		// 永远返回不失败
-		_, _ = tm.Println(fmt.Sprintf("节点名:%s 线程*%d 服务器:%s", n.Name, n.C, n.Host))
+		tm.MoveCursor(0, 2)
+		_, _ = tm.Println(fmt.Sprintf("--节点名:%s 线程*%d", n.Name, n.C))
 		_, _ = tm.Println(fmt.Sprintf(
-			"实时速度: %.2f钱包/秒 总生成:%d 总找到:%d",
+			"--实时速度: %.2f 钱包/秒 总生成:%d 总找到:%d",
 			n.speed(ts.Unix()),
 			n.TotalCount.Load(),
 			n.FoundCount.Load(),
@@ -207,6 +219,7 @@ func (n *Node) reportServer(wa *Wallet) (err error) {
 		return err
 	}
 
+	bodyContent = strings.Trim(bodyContent, "\"")
 	n.OutputString.Swap(&bodyContent)
 
 	return nil

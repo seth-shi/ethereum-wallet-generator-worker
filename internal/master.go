@@ -41,7 +41,7 @@ type Master struct {
 	Cip *dongle.Cipher
 }
 
-func NewMaster(port int, prefix, suffix string) (*Master, error) {
+func NewMaster(port int, prefix, suffix, key string) (*Master, error) {
 
 	// 打开或创建一个csv文件，以追加模式写入
 	walletPf, err := os.OpenFile("wallet.csv", os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0666)
@@ -59,17 +59,19 @@ func NewMaster(port int, prefix, suffix string) (*Master, error) {
 		}
 	}
 
-	key := lo.RandomString(16, lo.LowerCaseLettersCharset)
+	if key == "" {
+		key = lo.RandomString(16, lo.LowerCaseLettersCharset)
+	}
+
 	return &Master{
 		Port: port,
 		Config: &GetConfigRequest{
 			Prefix:   prefix,
 			Suffix:   suffix,
-			Key:      key,
 			MayCount: uint64(math.Pow(16, float64(matchLength))),
 		},
 		FilePoint:    walletPf,
-		ServerPublic: fmt.Sprintf("服务端:http://%s:%d\n", IPV4(), port),
+		ServerPublic: fmt.Sprintf("服务端:http://%s:%d?%s=%s", IPV4(), port, keyFieldName, key),
 		Cip:          getCipher(key),
 		Nodes:        orderedmap.NewOrderedMap[string, *NodeProgress](),
 		StartAt:      time.Now(),
@@ -79,6 +81,13 @@ func NewMaster(port int, prefix, suffix string) (*Master, error) {
 func (m *Master) Run() {
 
 	ticker := time.NewTicker(time.Second * 1)
+	tm.Clear()
+	tm.MoveCursor(0, 0)
+	_, _ = tm.Println(strings.Repeat("-", lineCharCount))
+	_, _ = tm.Println("--" + m.ServerPublic)
+	_, _ = tm.Println(strings.Repeat("-", lineCharCount))
+
+	tm.Flush()
 	for range ticker.C {
 
 		m.Locker.Lock()
@@ -94,10 +103,8 @@ func (m *Master) output(nodes *orderedmap.OrderedMap[string, *NodeProgress]) {
 	tableContent := m.buildContent(nodes)
 	m.ScreenOutput = url.QueryEscape(tableContent)
 
-	tm.Clear()
-	tm.MoveCursor(0, 0)
+	tm.MoveCursor(0, 5)
 	// 永远返回不失败
-	_, _ = tm.Println(m.ServerPublic)
 	_, _ = tm.Println(tableContent)
 	tm.Flush()
 }
