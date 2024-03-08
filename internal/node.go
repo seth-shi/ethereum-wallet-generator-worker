@@ -116,7 +116,7 @@ func (n *Node) timerOutput() {
 		tm.MoveCursor(0, 2)
 		_, _ = tm.Println(fmt.Sprintf("--节点名:%s 线程*%d", n.Name, n.C))
 		_, _ = tm.Println(fmt.Sprintf(
-			"--实时速度: %.2f 钱包/秒 总生成:%d 总找到:%d",
+			"--实时速度: %.2f 钱包/秒 生成:%d 找到:%d",
 			n.speed(ts.Unix()),
 			n.TotalCount.Load(),
 			n.FoundCount.Load(),
@@ -208,6 +208,7 @@ func (n *Node) reportServer(wa *Wallet) (err error) {
 		Count:      int(recentCount),
 		Found:      int(n.FoundCount.Load()),
 		Speed:      n.speed(nowUnix),
+		StartAt:    n.StartAt,
 		WalletData: wa,
 	}
 	data, _ := json.Marshal(progressReq)

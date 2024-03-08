@@ -21,6 +21,7 @@ type NodeProgress struct {
 	Found      int     `json:"found_count"`
 	Speed      float64 `json:"speed"`
 	WalletData *Wallet `json:"wallet_data"`
+	StartAt    int64   `json:"start_at"`
 
 	LastActiveAt time.Time `json:"-"`
 }

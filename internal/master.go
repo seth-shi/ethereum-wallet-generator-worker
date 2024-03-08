@@ -137,10 +137,10 @@ func (m *Master) buildContent(renderNodes *orderedmap.OrderedMap[string, *NodePr
 		return []string{
 			strconv.Itoa(i),
 			item.Name,
-			strconv.Itoa(item.Count),
 			strconv.Itoa(item.Found),
+			strconv.Itoa(item.Count),
 			fmt.Sprintf("%.2f 钱包/秒", item.Speed),
-			item.LastActiveAt.Format(time.DateTime),
+			timeToString(nowUnix - item.StartAt),
 		}
 	})
 	runTime := int64(time.Now().Sub(m.StartAt).Seconds())
@@ -148,7 +148,7 @@ func (m *Master) buildContent(renderNodes *orderedmap.OrderedMap[string, *NodePr
 
 	tableBuf := &bytes.Buffer{}
 	table := tablewriter.NewWriter(tableBuf)
-	table.SetHeader([]string{"#", "节点", "已生成", "已找到", "速度", "最近活跃时间"})
+	table.SetHeader([]string{"#", "节点", "已找到", "已生成", "速度", "运行时间"})
 	data = append(data, []string{
 		"--------------",
 		"--------------",
