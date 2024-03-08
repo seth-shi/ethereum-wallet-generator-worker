@@ -133,7 +133,7 @@ func (m *Master) buildContent(renderNodes *orderedmap.OrderedMap[string, *NodePr
 		// 如果超过一分钟无响应, 那么不要计算生成速度
 		if nowUnix-activeUnix > 60 {
 			item.Speed = 0
-			runAt = activeUnix - runAt
+			runAt = activeUnix - item.StartAt
 		}
 		speed += item.Speed
 		return []string{
