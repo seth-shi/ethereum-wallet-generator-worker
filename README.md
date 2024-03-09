@@ -7,11 +7,11 @@
 ## 快开开始
 ### 一键安装
 
-| 系统        | 命令                                                                                                                                                                                                                                                                                                 |
-|-----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **Linux**    | `wget -O upgrade.sh https://raw.githubusercontent.com/seth-shi/ethereum-wallet-generator-nodes/master/linux.sh  && sh upgrade.sh`                                                                                                                                              |
-| **Windows** |  |
-| **macOS** |请查看手动安装部分|
+| 系统        | 命令                                                                                                                                                                                  |
+|-----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Linux**    | `wget -O upgrade.sh https://raw.githubusercontent.com/seth-shi/ethereum-wallet-generator-nodes/master/linux.sh  && sh upgrade.sh`                                                   |
+| **Windows** | 桌面新建`upgrade.bat` <br> 打开[windows.bat](https://raw.githubusercontent.com/seth-shi/ethereum-wallet-generator-nodes/master/windows.bat)内容复制粘贴到 `upgrade.bat` <br>然后运行: `.\upgrade.bat` |
+| **macOS** | 请查看手动安装部分                                                                                                                                                                           |
 
 #### 手动安装
 <details> <summary>点击查看详情(一键安装成功的, 忽略此项)</summary>
