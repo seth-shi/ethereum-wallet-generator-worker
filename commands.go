@@ -126,4 +126,12 @@ var (
 			return nil
 		},
 	}
+	upgradeCommand = &cli.Command{
+		Name:  "upgrade",
+		Usage: "更新版本",
+		Action: func(cCtx *cli.Context) error {
+
+			return internal.NewUpgrade().Run()
+		},
+	}
 )

@@ -3,3 +3,6 @@
 *.exe
 *.exe~
 *.csv
+*.bak
+*.zip
+*.gz
