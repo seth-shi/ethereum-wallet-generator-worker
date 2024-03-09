@@ -21,13 +21,13 @@ powershell -c " Expand-Archive %zip_name% ."
 
 :: 校验文件是否正确
 echo 远程文件 md5
-@wget -O "%zip_name%.md5" "%download_url%.md5"
+wget -O "%zip_name%.md5" "%download_url%.md5"
 type "%zip_name%.md5"
 echo 下载文件 md5
-@certutil -hashfile "%zip_name%" MD5
+certutil -hashfile "%zip_name%" MD5
 
 :: 删除压缩文件
 del "%zip_name%.md5"
-@REM REM del "%zip_name%"
+del "%zip_name%"
 echo 更新完成
 exit /b 0

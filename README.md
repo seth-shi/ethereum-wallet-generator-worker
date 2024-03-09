@@ -3,8 +3,20 @@
 
 ![运行图](assets/1.png)
 
-## 快速开始
-### 下载二进制文件(或者自行构建), 现在基本都是`amd`架构, 如果不能运行,自行把链接中的`amd`换成`arm`(比如安卓中)
+
+## 快开开始
+### 一键安装
+
+| 系统        | 命令                                                                                                                                                                                                                                                                                                 |
+|-----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Linux**    | `wget -O upgrade.sh https://raw.githubusercontent.com/seth-shi/ethereum-wallet-generator-nodes/master/linux.sh  && sh upgrade.sh`                                                                                                                                              |
+| **Windows** |  |
+| **macOS** |请查看手动安装部分|
+
+#### 手动安装
+<details> <summary>点击查看详情(一键安装成功的, 忽略此项)</summary>
+
+* 下载二进制文件(或者自行构建), 现在基本都是`amd`架构, 如果不能运行,自行把链接中的`amd`换成`arm`(比如安卓中)
 
 | 系统        | 命令                                                                                                                                                                                                                                                                                                 |
 |-----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -12,13 +24,15 @@
 | **Windows** | 点击下载[https://github.com/seth-shi/ethereum-wallet-generator-nodes/releases/download/v9.9.9/ethereum-wallet-generator-nodes-v9.9.9-windows-amd64.zip](https://github.com/seth-shi/ethereum-wallet-generator-nodes/releases/download/v9.9.9/ethereum-wallet-generator-nodes-v9.9.9-windows-amd64.zip) |
 | **macOS** | 点击下载[https://github.com/seth-shi/ethereum-wallet-generator-nodes/releases/download/v9.9.9/ethereum-wallet-generator-nodes-v9.9.9-darwin-amd64.tar.gz](https://github.com/seth-shi/ethereum-wallet-generator-nodes/releases/download/v9.9.9/ethereum-wallet-generator-nodes-v9.9.9-darwin-amd64.tar.gz)]                                                                                                                                           |
 
-### 解压文件
+* 解压文件
 
 | 系统        | 命令                                                                  |
 |-----------|---------------------------------------------------------------------|
 | **Linux**    | `tar xvf ethereum-wallet-generator-nodes-v9.9.9-linux-amd64.tar.gz` |
 | **Windows** | 双击解压                                                                |
 | **macOS** | 双击解压                                                                |
+</details>
+
 
 ### `master`运行 (必须有公网服务器), 会输出公网`$url`
 
