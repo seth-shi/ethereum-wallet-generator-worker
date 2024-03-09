@@ -46,7 +46,7 @@ type Node struct {
 	OutputString atomic.Pointer[string]
 }
 
-func NewNode(host string, cfg GetConfigRequest, c uint) (*Node, error) {
+func NewNode(host string, cfg GetConfigRequest, c uint, nodeName string) (*Node, error) {
 
 	// 打开或创建一个csv文件，以追加模式写入
 	pf, err := os.OpenFile("wallet.node.csv", os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0666)
@@ -75,7 +75,7 @@ func NewNode(host string, cfg GetConfigRequest, c uint) (*Node, error) {
 		Host:       host,
 		FilePoint:  pf,
 		C:          c,
-		Name:       getNodeName(),
+		Name:       nodeName,
 		Cip:        getCipher(key),
 		Config:     cfg,
 		StartAt:    time.Now().Unix(),

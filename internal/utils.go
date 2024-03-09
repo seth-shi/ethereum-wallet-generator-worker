@@ -74,7 +74,7 @@ func timeToString(SubTime int64) string {
 	return fmt.Sprintf("%d天%d时%d分%d秒", day, hour, minute, second)
 }
 
-func getNodeName() string {
+func GetNodeName() string {
 
 	var prefix string
 	var value string
@@ -84,7 +84,7 @@ func getNodeName() string {
 		for _, netInterface := range netInterfaces {
 			macAddr := netInterface.HardwareAddr.String()
 			if len(macAddr) != 0 {
-				value = strings.ReplaceAll(strings.TrimSpace(macAddr), ":", "")
+				value = strings.TrimSpace(macAddr)
 				suffix = "mac"
 				break
 			}
@@ -94,21 +94,10 @@ func getNodeName() string {
 	if u, err := user.Current(); err == nil {
 		prefix = u.Username
 		if value == "" {
-			value = strings.ReplaceAll(u.Uid, "-", "")
+			value = u.Uid
 			suffix = "uid"
 		}
 	}
 
-	value = fixLength(value, 16)
-
 	return fmt.Sprintf("%s@%s-%s", prefix, suffix, value)
-}
-
-func fixLength(str string, length int) string {
-
-	if len(str) >= length {
-		return str[:length]
-	}
-
-	return str + strings.Repeat("0", length-len(str))
 }

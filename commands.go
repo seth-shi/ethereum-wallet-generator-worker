@@ -82,15 +82,26 @@ var (
 				Value: 0,
 				Usage: "并发线程, 默认 CPU 个数",
 			},
+			&cli.StringFlag{
+				Name:  "name",
+				Value: "",
+				Usage: "自定义节点名字",
+			},
 		},
 		Before: func(cCtx *cli.Context) error {
 			var (
 				c          = cCtx.Uint("c")
 				serverHost = cCtx.String("server")
+				nodeName   = cCtx.String("nodeName")
 			)
 			if c == 0 {
 				c = uint(runtime.NumCPU())
 			}
+
+			if nodeName == "" {
+				nodeName = internal.GetNodeName()
+			}
+			fmt.Printf("节点:[%s]启动中...\n", nodeName)
 
 			// 从服务端获取配置
 			var apiRes internal.GetConfigRequest
@@ -103,7 +114,7 @@ var (
 				return errors.New(fmt.Sprintf("http get status %s", resp.Status()))
 			}
 
-			if Node, err = internal.NewNode(serverHost, apiRes, c); err != nil {
+			if Node, err = internal.NewNode(serverHost, apiRes, c, nodeName); err != nil {
 				return err
 			}
 
