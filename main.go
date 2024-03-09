@@ -17,7 +17,6 @@ func main() {
 		Commands: []*cli.Command{
 			masterCommand,
 			nodeCommand,
-			upgradeCommand,
 		},
 	}
 
