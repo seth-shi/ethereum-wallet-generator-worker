@@ -92,7 +92,7 @@ var (
 			var (
 				c          = cCtx.Uint("c")
 				serverHost = cCtx.String("server")
-				nodeName   = cCtx.String("nodeName")
+				nodeName   = cCtx.String("name")
 			)
 			if c == 0 {
 				c = uint(runtime.NumCPU())
