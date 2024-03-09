@@ -39,6 +39,8 @@ type Master struct {
 	FilePoint *os.File
 	// 加密解密
 	Cip *dongle.Cipher
+	// 是否需要清屏
+	NeedClearScreen bool
 }
 
 func NewMaster(port int, prefix, suffix, key string) (*Master, error) {
@@ -75,22 +77,18 @@ func NewMaster(port int, prefix, suffix, key string) (*Master, error) {
 			Suffix:   suffix,
 			MayCount: uint64(math.Pow(16, float64(matchLength))),
 		},
-		FilePoint:    walletPf,
-		ServerPublic: fmt.Sprintf("服务端:http://%s:%d?%s=%s", IPV4(), port, keyFieldName, key),
-		Cip:          getCipher(key),
-		Nodes:        orderedmap.NewOrderedMap[string, *NodeProgress](),
-		StartAt:      time.Now(),
+		FilePoint:       walletPf,
+		ServerPublic:    fmt.Sprintf("服务端:http://%s:%d?%s=%s", IPV4(), port, keyFieldName, key),
+		Cip:             getCipher(key),
+		Nodes:           orderedmap.NewOrderedMap[string, *NodeProgress](),
+		StartAt:         time.Now(),
+		NeedClearScreen: true,
 	}, nil
 }
 
 func (m *Master) Run() {
 
 	ticker := time.NewTicker(time.Second * 1)
-	tm.Clear()
-	tm.MoveCursor(0, 0)
-	_, _ = tm.Println(strings.Repeat("-", lineCharCount))
-	_, _ = tm.Printf("--[%s]\n", m.ServerPublic)
-	_, _ = tm.Println(strings.Repeat("-", lineCharCount))
 
 	tm.Flush()
 	for range ticker.C {
@@ -108,8 +106,14 @@ func (m *Master) output(nodes *orderedmap.OrderedMap[string, *NodeProgress]) {
 	tableContent := m.buildContent(nodes)
 	m.ScreenOutput = url.QueryEscape(tableContent)
 
-	tm.MoveCursor(0, 5)
-	// 永远返回不失败
+	if m.NeedClearScreen {
+		tm.Clear()
+		m.NeedClearScreen = false
+	}
+	tm.MoveCursor(0, 0)
+	_, _ = tm.Println(strings.Repeat("-", lineCharCount))
+	_, _ = tm.Printf("--[%s]\n", m.ServerPublic)
+	_, _ = tm.Println(strings.Repeat("-", lineCharCount))
 	_, _ = tm.Println(tableContent)
 	tm.Flush()
 }
@@ -123,27 +127,32 @@ func (m *Master) buildContent(renderNodes *orderedmap.OrderedMap[string, *NodePr
 	)
 
 	nowUnix := time.Now().Unix()
-	data := lo.FilterMap(renderNodes.Keys(), func(key string, i int) ([]string, bool) {
+	data := lo.Map(renderNodes.Keys(), func(key string, i int) []string {
 		item, _ := renderNodes.Get(key)
 		activeUnix := item.LastActiveAt.Unix()
 
 		// 虽然不活跃但是还是要计算总量
 		genCount += uint64(item.Count)
 		walletCount += uint64(item.Found)
-		// 如果超过一分钟无响应, 那么不要计算生成速度
-		if nowUnix-activeUnix > 60 {
-			return nil, false
+
+		// 如果超过十五秒钟无响应, 那么不要计算生成速度
+		runAt := nowUnix - item.StartAt
+		itemSpeed := fmt.Sprintf("%.2f 钱包/秒", item.Speed)
+		if nowUnix-activeUnix > 15 {
+			speed += item.Speed
+			runAt = activeUnix - item.StartAt
+			itemSpeed = "0.00"
+			m.NeedClearScreen = true
 		}
 
-		speed += item.Speed
 		return []string{
 			strconv.Itoa(i),
 			item.Name,
 			strconv.Itoa(item.Found),
 			strconv.Itoa(item.Count),
-			fmt.Sprintf("%.2f 钱包/秒", item.Speed),
-			timeToString(nowUnix - item.StartAt),
-		}, true
+			itemSpeed,
+			timeToString(runAt),
+		}
 	})
 	runTime := int64(time.Now().Sub(m.StartAt).Seconds())
 	process := (float64(genCount) / float64(m.Config.MayCount)) * 100
