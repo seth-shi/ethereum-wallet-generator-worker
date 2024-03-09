@@ -62,7 +62,6 @@ var (
 				Master.FilePoint.Close()
 			}()
 
-			go Master.StartWebServer()
 			Master.Run()
 
 			return nil

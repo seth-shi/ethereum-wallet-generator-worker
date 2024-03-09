@@ -88,6 +88,8 @@ func NewMaster(port int, prefix, suffix, key string) (*Master, error) {
 
 func (m *Master) Run() {
 
+	go m.StartWebServer()
+
 	ticker := time.NewTicker(time.Second * 1)
 
 	tm.Flush()
@@ -137,20 +139,19 @@ func (m *Master) buildContent(renderNodes *orderedmap.OrderedMap[string, *NodePr
 
 		// 如果超过十五秒钟无响应, 那么不要计算生成速度
 		runAt := nowUnix - item.StartAt
-		itemSpeed := fmt.Sprintf("%.2f 钱包/秒", item.Speed)
 		if nowUnix-activeUnix > 15 {
-			speed += item.Speed
 			runAt = activeUnix - item.StartAt
-			itemSpeed = "0.00"
+			item.Speed = 0
 			m.NeedClearScreen = true
 		}
+		speed += item.Speed
 
 		return []string{
 			strconv.Itoa(i),
 			item.Name,
 			strconv.Itoa(item.Found),
 			strconv.Itoa(item.Count),
-			itemSpeed,
+			fmt.Sprintf("%.2f", item.Speed),
 			timeToString(runAt),
 		}
 	})
