@@ -7,7 +7,7 @@ import (
 	"fmt"
 	tm "github.com/buger/goterm"
 	"github.com/go-resty/resty/v2"
-	"github.com/golang-module/dongle"
+	"github.com/samber/lo"
 	"net/http"
 	"net/url"
 	"os"
@@ -35,7 +35,7 @@ type Node struct {
 	C uint `json:"-"`
 
 	// 加密解密
-	Cip *dongle.Cipher
+	key []byte
 
 	// 配置
 	Config GetConfigRequest
@@ -76,7 +76,7 @@ func NewNode(host string, cfg GetConfigRequest, c uint, nodeName string) (*Node,
 		FilePoint:  pf,
 		C:          c,
 		Name:       nodeName,
-		Cip:        getCipher(key),
+		key:        []byte(key),
 		Config:     cfg,
 		StartAt:    time.Now().Unix(),
 		HttpClient: resty.New().SetTimeout(time.Second * 5),
@@ -143,24 +143,30 @@ func (n *Node) loopMatchWallets() {
 	for {
 		if newWalletData := n.matchNewWallet(); newWalletData != nil {
 			if err := n.reportServer(newWalletData); err != nil {
-				if err1 := n.storeWalletData(newWalletData); err1 != nil {
-					fmt.Printf("\n%s,%s\n", newWalletData.Address, newWalletData.Mnemonic)
-					MustError(err1)
+				if storeErr := n.storeWalletData(newWalletData); storeErr != nil {
+					MustError(storeErr)
 				}
 			}
 		}
 	}
 }
 
-func (n *Node) storeWalletData(data *Wallet) error {
+func (n *Node) storeWalletData(wa *Wallet) error {
+
+	// 凡是出错, 直接打印原始出来在标准输出
+	// node 保存钱包的时候, 也需要加密数据
+	encryptData, err := AesGcmEncrypt(wa.Mnemonic, n.key)
+	if err != nil {
+		return errors.New(fmt.Sprintf("钱包加密失败:[%s,%s]%s", wa.Address, wa.Mnemonic, err.Error()))
+	}
 
 	// 创建一个csv写入器
 	writer := csv.NewWriter(n.FilePoint)
 	// 循环写入数据
-	err := writer.Write([]string{data.Address, data.Mnemonic})
-	if err != nil {
-		return errors.New(fmt.Sprintf("钱包写入失败:[%s,%s]%s", data.Address, data.Mnemonic, err.Error()))
+	if err := writer.Write([]string{wa.Address, string(encryptData)}); err != nil {
+		return errors.New(fmt.Sprintf("钱包写入失败:[%s,%s]%s", wa.Address, wa.Mnemonic, err.Error()))
 	}
+
 	// 刷新缓冲区，确保所有数据都写入文件
 	writer.Flush()
 	return nil
@@ -204,16 +210,27 @@ func (n *Node) reportServer(wa *Wallet) (err error) {
 
 	// 计算时间
 	progressReq := &NodeProgress{
-		Name:       n.Name,
-		Count:      int(recentCount),
-		Found:      int(n.FoundCount.Load()),
-		Speed:      n.speed(nowUnix),
-		StartAt:    n.StartAt,
-		WalletData: wa,
+		Name:    n.Name,
+		Count:   int(recentCount),
+		Found:   int(n.FoundCount.Load()),
+		Speed:   n.speed(nowUnix),
+		StartAt: n.StartAt,
 	}
-	data, _ := json.Marshal(progressReq)
-	encryptData := dongle.Encrypt.FromBytes(data).ByAes(n.Cip).ToRawBytes()
-	resp, err := n.HttpClient.R().SetBody(encryptData).Post(n.Host)
+	if wa != nil {
+		encryptData, err := AesGcmEncrypt(wa.Mnemonic, n.key)
+		if err != nil {
+			return err
+		}
+		progressReq.Address = lo.ToPtr(wa.Address)
+		progressReq.EncryptMnemonic = lo.ToPtr(encryptData)
+	}
+
+	data, err := json.Marshal(progressReq)
+	if err != nil {
+		return err
+	}
+
+	resp, err := n.HttpClient.R().SetBody(data).Post(n.Host)
 	if err != nil {
 		return err
 	}

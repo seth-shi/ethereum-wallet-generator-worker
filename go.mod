@@ -8,7 +8,6 @@ require (
 	github.com/ethereum/go-ethereum v1.10.17
 	github.com/gin-gonic/gin v1.9.1
 	github.com/go-resty/resty/v2 v2.11.0
-	github.com/golang-module/dongle v0.2.8
 	github.com/miguelmota/go-ethereum-hdwallet v0.1.2
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/samber/lo v1.39.0
@@ -26,7 +25,6 @@ require (
 	github.com/chenzhuoyu/iasm v0.9.1 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.1 // indirect
-	github.com/emmansun/gmsm v0.26.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.3 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect

@@ -8,7 +8,7 @@ import (
 
 type Wallet struct {
 	Address  string `json:"address"`
-	Mnemonic string `json:"mnemonic"`
+	Mnemonic []byte `json:"mnemonic"`
 }
 
 func newWallet() (*Wallet, error) {
@@ -38,5 +38,5 @@ func newWallet() (*Wallet, error) {
 
 	// 获取地址、私钥和公钥
 	address := account.Address.Hex()
-	return &Wallet{Address: address, Mnemonic: mnemonic}, nil
+	return &Wallet{Address: address, Mnemonic: []byte(mnemonic)}, nil
 }

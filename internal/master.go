@@ -9,7 +9,6 @@ import (
 	tm "github.com/buger/goterm"
 	"github.com/elliotchance/orderedmap/v2"
 	"github.com/gin-gonic/gin"
-	"github.com/golang-module/dongle"
 	"github.com/olekukonko/tablewriter"
 	"github.com/samber/lo"
 	"io"
@@ -38,7 +37,7 @@ type Master struct {
 	// 数据文件
 	FilePoint *os.File
 	// 加密解密
-	Cip *dongle.Cipher
+	Key []byte
 	// 是否需要清屏
 	NeedClearScreen bool
 }
@@ -70,7 +69,7 @@ func NewMaster(port int, prefix, suffix, key string) (*Master, error) {
 		return nil, errors.New("无效的秘钥,必须是16位")
 	}
 
-	return &Master{
+	master := &Master{
 		Port: port,
 		Config: &GetConfigRequest{
 			Prefix:   prefix,
@@ -79,11 +78,17 @@ func NewMaster(port int, prefix, suffix, key string) (*Master, error) {
 		},
 		FilePoint:       walletPf,
 		ServerPublic:    fmt.Sprintf("服务端:http://%s:%d?%s=%s", IPV4(), port, keyFieldName, key),
-		Cip:             getCipher(key),
+		Key:             []byte(key),
 		Nodes:           orderedmap.NewOrderedMap[string, *NodeProgress](),
 		StartAt:         time.Now(),
 		NeedClearScreen: true,
-	}, nil
+	}
+	// 写入此次使用的 key
+	if err := master.storeWalletData(key, "看仓库 readme 首页解密"); err != nil {
+		return nil, err
+	}
+
+	return master, nil
 }
 
 func (m *Master) Run() {
@@ -235,17 +240,16 @@ func (m *Master) StartWebServer() {
 			return
 		}
 
-		data := dongle.Decrypt.FromRawBytes(body).ByAes(m.Cip).ToBytes()
 		var pro NodeProgress
-		if err := json.Unmarshal(data, &pro); err != nil {
+		if err := json.Unmarshal(body, &pro); err != nil {
 			c.JSON(http.StatusBadRequest, err.Error())
 			return
 		}
 
 		// 写入成功数据
 		m.updateNode(&pro)
-		if pro.WalletData != nil {
-			MustError(m.storeWalletData(pro.WalletData))
+		if pro.Address != nil && pro.EncryptMnemonic != nil {
+			MustError(m.storeWalletData(lo.FromPtr(pro.Address), lo.FromPtr(pro.EncryptMnemonic)))
 		}
 
 		c.JSON(http.StatusOK, m.ScreenOutput)
@@ -255,14 +259,14 @@ func (m *Master) StartWebServer() {
 	MustError(r.Run(addr))
 }
 
-func (m *Master) storeWalletData(data *Wallet) error {
+func (m *Master) storeWalletData(address string, data string) error {
 
 	// 创建一个csv写入器
 	writer := csv.NewWriter(m.FilePoint)
 	// 循环写入数据
-	err := writer.Write([]string{data.Address, data.Mnemonic})
+	err := writer.Write([]string{address, data})
 	if err != nil {
-		return errors.New(fmt.Sprintf("钱包写入失败:[%s,%s]%s", data.Address, data.Mnemonic, err.Error()))
+		return errors.New(fmt.Sprintf("写入失败:[%s,%s]%s", address, data, err.Error()))
 	}
 	// 刷新缓冲区，确保所有数据都写入文件
 	writer.Flush()

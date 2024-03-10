@@ -4,6 +4,25 @@
 ![运行图](assets/1.png)
 
 
+## 注意
+* 生成之后的助记词是被加密的, 需要这样子解密
+* `wallet.csv` 文件中包含如下内容
+```text
+rmkcmvvaevdzupda," "看仓库readme说明解密"
+0x000Bb65F2e742F10492546bDaFD74F9BCEA427BD,nxI3NdxHKsIezLVu7UFBdkDM9pLLnEvgP/ZxlHtzq1ICtTDhhkKNCj8T1bAbyVKarh3wnYEng3hx1dPrxOEmYla9JO+OqIFTWc9VXdq8pay20DL+Kixy6mS3o4K0r11/Z3E5YQ==
+```
+* 解密
+```text
+ethereum-wallet-generator-nodes decrypt --key=rmkcmvvaevdzupda --data=Z8qTxdkhRlTwbZEO+dppDCY7F3TWcsP/4B9q4V456stR2Ss7oFdHl5nWhMBNnrAP7J3H3xkk3jEzUqnAdW9V2nfgJKEsKh1QlCKy7lnfzKbVlKl020x5NAdfvzgeZ8+LQj5GgT9VbHI/jeO1XWc= --limit=12
+# 助记词 0-12 开始
+# glory helmet alter river mystery method fuel number acoustic address parade flavor
+# 助记词 0-12 结束
+# 你也可以分尅几次解密 (--limit=6 --offset=0)
+# 解密后之后保存好, 删除所有记录
+# 解密后之后保存好, 删除所有记录
+# 解密后之后保存好, 删除所有记录
+```
+
 ## 快开开始
 ### 一键安装
 
