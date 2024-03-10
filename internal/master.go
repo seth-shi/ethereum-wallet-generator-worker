@@ -23,15 +23,15 @@ import (
 )
 
 type Master struct {
-	Config *GetConfigRequest
+	Config       *GetConfigRequest
+	BuildVersion string
 	// 运行配置
-	Port         int
-	ServerPublic string
-	StartAt      time.Time
+	Port    int
+	StartAt time.Time
 
 	// 无锁输出
 	ScreenOutput string
-	Nodes        *orderedmap.OrderedMap[string, *NodeProgress]
+	Nodes        *orderedmap.OrderedMap[string, *NodeStatusRequest]
 	Locker       sync.RWMutex
 
 	// 数据文件
@@ -70,16 +70,16 @@ func NewMaster(port int, prefix, suffix, key string) (*Master, error) {
 	}
 
 	master := &Master{
-		Port: port,
+		Port:         port,
+		BuildVersion: GetBuildVersion(),
 		Config: &GetConfigRequest{
 			Prefix:   prefix,
 			Suffix:   suffix,
 			MayCount: uint64(math.Pow(16, float64(matchLength))),
 		},
 		FilePoint:       walletPf,
-		ServerPublic:    fmt.Sprintf("服务端:http://%s:%d?%s=%s", IPV4(), port, keyFieldName, key),
 		Key:             []byte(key),
-		Nodes:           orderedmap.NewOrderedMap[string, *NodeProgress](),
+		Nodes:           orderedmap.NewOrderedMap[string, *NodeStatusRequest](),
 		StartAt:         time.Now(),
 		NeedClearScreen: true,
 	}
@@ -108,7 +108,7 @@ func (m *Master) Run() {
 	}
 }
 
-func (m *Master) output(nodes *orderedmap.OrderedMap[string, *NodeProgress]) {
+func (m *Master) output(nodes *orderedmap.OrderedMap[string, *NodeStatusRequest]) {
 
 	tableContent := m.buildContent(nodes)
 	m.ScreenOutput = url.QueryEscape(tableContent)
@@ -119,13 +119,13 @@ func (m *Master) output(nodes *orderedmap.OrderedMap[string, *NodeProgress]) {
 	}
 	tm.MoveCursor(0, 0)
 	_, _ = tm.Println(strings.Repeat("-", lineCharCount))
-	_, _ = tm.Printf("--[%s]\n", m.ServerPublic)
+	_, _ = tm.Print(fmt.Sprintf("--版本号:%s\n--服务端:http://%s:%d?%s=%s\n", m.BuildVersion, IPV4(), m.Port, keyFieldName, m.Key))
 	_, _ = tm.Println(strings.Repeat("-", lineCharCount))
 	_, _ = tm.Println(tableContent)
 	tm.Flush()
 }
 
-func (m *Master) buildContent(renderNodes *orderedmap.OrderedMap[string, *NodeProgress]) string {
+func (m *Master) buildContent(renderNodes *orderedmap.OrderedMap[string, *NodeStatusRequest]) string {
 
 	var (
 		genCount    uint64
@@ -151,13 +151,20 @@ func (m *Master) buildContent(renderNodes *orderedmap.OrderedMap[string, *NodePr
 		}
 		speed += item.Speed
 
+		versionDiff := "√"
+		if item.BuildVersion != m.BuildVersion {
+			versionDiff = "×"
+		}
+
 		return []string{
 			strconv.Itoa(i),
 			item.Name,
 			strconv.Itoa(item.Found),
 			strconv.Itoa(item.Count),
+			"",
 			fmt.Sprintf("%.2f", item.Speed),
 			timeToString(runAt),
+			versionDiff + item.BuildVersion,
 		}
 	})
 	runTime := int64(time.Now().Sub(m.StartAt).Seconds())
@@ -165,8 +172,10 @@ func (m *Master) buildContent(renderNodes *orderedmap.OrderedMap[string, *NodePr
 
 	tableBuf := &bytes.Buffer{}
 	table := tablewriter.NewWriter(tableBuf)
-	table.SetHeader([]string{"#", "节点", "已找到", "已生成", "速度", "运行时间"})
+	table.SetHeader([]string{"#", "节点", "已找到", "已生成", "", "速度", "运行时间", "版本号"})
 	data = append(data, []string{
+		"--------------",
+		"--------------",
 		"--------------",
 		"--------------",
 		"--------------",
@@ -175,6 +184,8 @@ func (m *Master) buildContent(renderNodes *orderedmap.OrderedMap[string, *NodePr
 		"--------------",
 	})
 	data = append(data, []string{
+		"--------------",
+		"--------------",
 		"--------------",
 		"--------------",
 		"--------------",
@@ -186,6 +197,8 @@ func (m *Master) buildContent(renderNodes *orderedmap.OrderedMap[string, *NodePr
 		"运行时间",
 		"预计时间",
 		"总找到",
+		"",
+		"",
 		"总生成",
 		"前缀",
 		"后缀",
@@ -195,6 +208,8 @@ func (m *Master) buildContent(renderNodes *orderedmap.OrderedMap[string, *NodePr
 		timeToString(runTime),
 		timeToString(int64(float64(m.Config.MayCount) / speed)),
 		fmt.Sprintf("%d", walletCount),
+		"",
+		"",
 		fmt.Sprintf("%d", genCount),
 		m.Config.Prefix,
 		m.Config.Suffix,
@@ -204,6 +219,8 @@ func (m *Master) buildContent(renderNodes *orderedmap.OrderedMap[string, *NodePr
 		"生成速度",
 		fmt.Sprintf("%.2f 钱包/秒", speed),
 		"预计要",
+		"",
+		"",
 		fmt.Sprintf("%d", m.Config.MayCount),
 		"进度",
 		fmt.Sprintf("%.2f%s", process, "%"),
@@ -215,7 +232,7 @@ func (m *Master) buildContent(renderNodes *orderedmap.OrderedMap[string, *NodePr
 	return tableBuf.String()
 }
 
-func (m *Master) updateNode(pro *NodeProgress) {
+func (m *Master) updateNode(pro *NodeStatusRequest) {
 	m.Locker.Lock()
 	defer m.Locker.Unlock()
 	if oldPro, exists := m.Nodes.Get(pro.Name); exists {
@@ -240,7 +257,7 @@ func (m *Master) StartWebServer() {
 			return
 		}
 
-		var pro NodeProgress
+		var pro NodeStatusRequest
 		if err := json.Unmarshal(body, &pro); err != nil {
 			c.JSON(http.StatusBadRequest, err.Error())
 			return

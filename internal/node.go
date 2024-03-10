@@ -19,6 +19,8 @@ import (
 type Node struct {
 	Name string
 
+	BuildVersion string
+
 	// 总量
 	TotalCount  atomic.Uint64
 	FoundCount  atomic.Int32
@@ -72,14 +74,15 @@ func NewNode(host string, cfg GetConfigRequest, c uint, nodeName string) (*Node,
 	host = urlObj.String()
 
 	return &Node{
-		Host:       host,
-		FilePoint:  pf,
-		C:          c,
-		Name:       nodeName,
-		key:        []byte(key),
-		Config:     cfg,
-		StartAt:    time.Now().Unix(),
-		HttpClient: resty.New().SetTimeout(time.Second * 5),
+		Host:         host,
+		FilePoint:    pf,
+		C:            c,
+		Name:         nodeName,
+		key:          []byte(key),
+		Config:       cfg,
+		BuildVersion: GetBuildVersion(),
+		StartAt:      time.Now().Unix(),
+		HttpClient:   resty.New().SetTimeout(time.Second * 5),
 	}, nil
 }
 
@@ -114,6 +117,7 @@ func (n *Node) timerOutput() {
 
 		// 永远返回不失败
 		tm.MoveCursor(0, 2)
+		_, _ = tm.Println(fmt.Sprintf("--版本号:%s", n.BuildVersion))
 		_, _ = tm.Println(fmt.Sprintf("--节点名:%s 线程*%d", n.Name, n.C))
 		_, _ = tm.Println(fmt.Sprintf(
 			"--实时速度: %.2f 钱包/秒 生成:%d 找到:%d",
@@ -163,7 +167,7 @@ func (n *Node) storeWalletData(wa *Wallet) error {
 	// 创建一个csv写入器
 	writer := csv.NewWriter(n.FilePoint)
 	// 循环写入数据
-	if err := writer.Write([]string{wa.Address, string(encryptData)}); err != nil {
+	if err := writer.Write([]string{wa.Address, encryptData}); err != nil {
 		return errors.New(fmt.Sprintf("钱包写入失败:[%s,%s]%s", wa.Address, wa.Mnemonic, err.Error()))
 	}
 
@@ -209,12 +213,13 @@ func (n *Node) reportServer(wa *Wallet) (err error) {
 	}()
 
 	// 计算时间
-	progressReq := &NodeProgress{
-		Name:    n.Name,
-		Count:   int(recentCount),
-		Found:   int(n.FoundCount.Load()),
-		Speed:   n.speed(nowUnix),
-		StartAt: n.StartAt,
+	progressReq := &NodeStatusRequest{
+		Name:         n.Name,
+		BuildVersion: n.BuildVersion,
+		Count:        int(recentCount),
+		Found:        int(n.FoundCount.Load()),
+		Speed:        n.speed(nowUnix),
+		StartAt:      n.StartAt,
 	}
 	if wa != nil {
 		encryptData, err := AesGcmEncrypt(wa.Mnemonic, n.key)

@@ -15,7 +15,7 @@ type GetConfigRequest struct {
 	Suffix   string `json:"suffix"`
 }
 
-type NodeProgress struct {
+type NodeStatusRequest struct {
 	Name    string  `json:"name"`
 	Count   int     `json:"gen_count"`
 	Found   int     `json:"found_count"`
@@ -23,6 +23,8 @@ type NodeProgress struct {
 	StartAt int64   `json:"start_at"`
 
 	LastActiveAt time.Time `json:"-"`
+
+	BuildVersion string `json:"build_version"`
 
 	// 需要加密的数据
 	Address         *string `json:"address"`

@@ -12,6 +12,7 @@ import (
 	"math"
 	"net"
 	"os/user"
+	"runtime/debug"
 	"strings"
 	"time"
 )
@@ -20,6 +21,34 @@ func MustError(err error) {
 	if err != nil {
 		log.Fatalln(err)
 	}
+}
+
+func GetBuildVersion() string {
+
+	var (
+		buildTime string
+	)
+
+	if buildInfo, ok := debug.ReadBuildInfo(); ok {
+
+		for _, s := range buildInfo.Settings {
+			switch s.Key {
+			//case "vcs.revision":
+			//	git = s.Value
+			case "vcs.time":
+				buildTime = s.Value
+			}
+		}
+	}
+
+	// 如果不为空
+	if buildTime != "" {
+		if timeObj, err := time.Parse(time.RFC3339Nano, buildTime); err == nil {
+			buildTime = timeObj.Format("20060102150405")
+		}
+	}
+
+	return buildTime
 }
 
 func AesGcmEncrypt(plaintext []byte, key []byte) (string, error) {
