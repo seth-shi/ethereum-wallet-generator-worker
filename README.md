@@ -29,7 +29,7 @@ ethereum-wallet-generator-nodes decrypt --key=rmkcmvvaevdzupda --data=Z8qTxdkhRl
 | 系统        | 命令                                                                                                                                                                                 |
 |-----------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | **Linux**    | `wget https://raw.githubusercontent.com/seth-shi/ethereum-wallet-generator-nodes/master/linux.sh  && bash linux.sh`                                                                |
-| **Windows** | 下载 [windows.ps1](https://raw.githubusercontent.com/seth-shi/ethereum-wallet-generator-nodes/master/windows.ps1) <br>然后以管理员身份打开`Powershell`运行开启策略`set-executionpolicy remotesigned` <br> 右键`windows.ps1`使用`Powershell`运行 <br> 或者在命令行运行`./windows.ps1` |
+| **Windows** | 下载 [windows.ps1](https://raw.githubusercontent.com/seth-shi/ethereum-wallet-generator-nodes/master/windows.ps1) <br> 右键`windows.ps1`使用`Powershell`运行 <br> 或者在命令行运行`./windows.ps1` |
 | **macOS** | 请查看手动安装部分                                                                                                                                                                          |
 
 #### 手动安装
