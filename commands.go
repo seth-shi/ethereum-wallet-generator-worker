@@ -115,7 +115,7 @@ var (
 			}
 
 			if resp.StatusCode() != http.StatusOK {
-				return errors.New(fmt.Sprintf("http get status %s", resp.Status()))
+				return errors.New(fmt.Sprintf("获取配置失败[%d]%s", resp.StatusCode(), resp.String()))
 			}
 
 			if Node, err = internal.NewNode(serverHost, apiRes, c, nodeName); err != nil {
