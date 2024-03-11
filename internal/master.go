@@ -246,6 +246,18 @@ func (m *Master) StartWebServer() {
 	gin.DefaultWriter = io.Discard
 	r := gin.Default()
 	r.GET("/", func(c *gin.Context) {
+
+		key, exists := c.GetQuery("key")
+		if !exists || key == "" {
+			c.JSON(http.StatusBadRequest, "key 不存在")
+			return
+		}
+
+		if key != string(m.Key) {
+			c.JSON(http.StatusBadRequest, "和服务端的 key 不匹配")
+			return
+		}
+
 		c.JSON(http.StatusOK, m.Config)
 	})
 	// 上报状态
