@@ -111,11 +111,18 @@ func (n *Node) speed(nowUnix int64) float64 {
 func (n *Node) timerOutput() {
 	timer := time.NewTicker(time.Second)
 	tm.Clear()
-	tm.MoveCursor(0, 0)
-	_, _ = tm.Println(strings.Repeat("-", lineCharCount))
+	var lastMinute = time.Now().Minute()
 	for ts := range timer.C {
 
+		nowMinute := ts.Minute()
+		if nowMinute > lastMinute {
+			lastMinute = nowMinute
+			tm.Clear()
+		}
+
 		// 永远返回不失败
+		tm.MoveCursor(0, 0)
+		_, _ = tm.Println(strings.Repeat("-", lineCharCount))
 		tm.MoveCursor(0, 2)
 		_, _ = tm.Println(fmt.Sprintf("--版本号:%s", n.BuildVersion))
 		_, _ = tm.Println(fmt.Sprintf("--节点名:%s 线程*%d", n.Name, n.C))

@@ -63,9 +63,7 @@ var (
 		},
 		Action: func(cCtx *cli.Context) error {
 
-			defer func() {
-				Master.FilePoint.Close()
-			}()
+			defer Master.FilePoint.Close()
 
 			Master.Run()
 
@@ -125,6 +123,8 @@ var (
 			return nil
 		},
 		Action: func(cCtx *cli.Context) error {
+
+			defer Node.FilePoint.Close()
 
 			Node.Run()
 			return nil
