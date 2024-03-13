@@ -134,12 +134,15 @@ func (m *Master) buildContent(renderNodes *orderedmap.OrderedMap[string, *NodeSt
 	)
 
 	nowUnix := time.Now().Unix()
+	genCount = lo.SumBy(renderNodes.Keys(), func(key string) uint64 {
+		n, _ := renderNodes.Get(key)
+		return uint64(n.Count)
+	})
 	data := lo.Map(renderNodes.Keys(), func(key string, i int) []string {
 		item, _ := renderNodes.Get(key)
 		activeUnix := item.LastActiveAt.Unix()
 
 		// 虽然不活跃但是还是要计算总量
-		genCount += uint64(item.Count)
 		walletCount += uint64(item.Found)
 
 		// 如果超过十五秒钟无响应, 那么不要计算生成速度
@@ -156,12 +159,17 @@ func (m *Master) buildContent(renderNodes *orderedmap.OrderedMap[string, *NodeSt
 			versionDiff = "×"
 		}
 
+		var genProcess = 0.0
+		if genCount > 0 {
+			genProcess = float64(item.Count) / float64(genCount)
+		}
+
 		return []string{
 			strconv.Itoa(i),
 			item.Name,
 			strconv.Itoa(item.Found),
 			strconv.Itoa(item.Count),
-			"",
+			fmt.Sprintf("%.2f%s", genProcess*100, "%"),
 			fmt.Sprintf("%.2f", item.Speed),
 			timeToString(runAt),
 			versionDiff + item.BuildVersion,
@@ -172,7 +180,7 @@ func (m *Master) buildContent(renderNodes *orderedmap.OrderedMap[string, *NodeSt
 
 	tableBuf := &bytes.Buffer{}
 	table := tablewriter.NewWriter(tableBuf)
-	table.SetHeader([]string{"#", "节点", "已找到", "已生成", "", "速度", "运行时间", "版本号"})
+	table.SetHeader([]string{"#", "节点", "已找到", "已生成", "占比", "速度", "运行时间", "版本号"})
 	data = append(data, []string{
 		"--------------",
 		"--------------",
