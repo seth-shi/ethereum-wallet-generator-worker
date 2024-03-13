@@ -23,23 +23,23 @@ import (
 )
 
 type Master struct {
-	Config       *GetConfigRequest
-	BuildVersion string
+	config       *GetConfigRequest
+	buildVersion string
 	// 运行配置
-	Port    int
-	StartAt time.Time
+	port    int
+	startAt time.Time
 
 	// 无锁输出
-	ScreenOutput string
-	Nodes        *orderedmap.OrderedMap[string, *NodeStatusRequest]
-	Locker       sync.RWMutex
+	screenOutput string
+	nodes        *orderedmap.OrderedMap[string, *NodeStatusRequest]
+	locker       sync.RWMutex
 
 	// 数据文件
-	FilePoint *os.File
+	filePoint *os.File
 	// 加密解密
-	Key []byte
+	key []byte
 	// 是否需要清屏
-	NeedClearScreen bool
+	needClearScreen bool
 }
 
 func NewMaster(port int, prefix, suffix, key string) (*Master, error) {
@@ -70,18 +70,18 @@ func NewMaster(port int, prefix, suffix, key string) (*Master, error) {
 	}
 
 	master := &Master{
-		Port:         port,
-		BuildVersion: GetBuildVersion(),
-		Config: &GetConfigRequest{
+		port:         port,
+		buildVersion: GetBuildVersion(),
+		config: &GetConfigRequest{
 			Prefix:   prefix,
 			Suffix:   suffix,
 			MayCount: uint64(math.Pow(16, float64(matchLength))),
 		},
-		FilePoint:       walletPf,
-		Key:             []byte(key),
-		Nodes:           orderedmap.NewOrderedMap[string, *NodeStatusRequest](),
-		StartAt:         time.Now(),
-		NeedClearScreen: true,
+		filePoint:       walletPf,
+		key:             []byte(key),
+		nodes:           orderedmap.NewOrderedMap[string, *NodeStatusRequest](),
+		startAt:         time.Now(),
+		needClearScreen: true,
 	}
 	// 写入此次使用的 key
 	if err := master.storeWalletData(key, "看仓库 readme 首页解密"); err != nil {
@@ -89,6 +89,11 @@ func NewMaster(port int, prefix, suffix, key string) (*Master, error) {
 	}
 
 	return master, nil
+}
+
+func (m *Master) Stop() {
+
+	MustError(m.filePoint.Close())
 }
 
 func (m *Master) Run() {
@@ -100,9 +105,9 @@ func (m *Master) Run() {
 	tm.Flush()
 	for range ticker.C {
 
-		m.Locker.Lock()
-		nodes := m.Nodes.Copy()
-		m.Locker.Unlock()
+		m.locker.Lock()
+		nodes := m.nodes.Copy()
+		m.locker.Unlock()
 
 		m.output(nodes)
 	}
@@ -111,15 +116,15 @@ func (m *Master) Run() {
 func (m *Master) output(nodes *orderedmap.OrderedMap[string, *NodeStatusRequest]) {
 
 	tableContent := m.buildContent(nodes)
-	m.ScreenOutput = url.QueryEscape(tableContent)
+	m.screenOutput = url.QueryEscape(tableContent)
 
-	if m.NeedClearScreen {
+	if m.needClearScreen {
 		tm.Clear()
-		m.NeedClearScreen = false
+		m.needClearScreen = false
 	}
 	tm.MoveCursor(0, 0)
 	_, _ = tm.Println(strings.Repeat("-", lineCharCount))
-	_, _ = tm.Print(fmt.Sprintf("--版本号:%s\n--服务端:http://%s:%d?%s=%s\n", m.BuildVersion, IPV4(), m.Port, keyFieldName, m.Key))
+	_, _ = tm.Print(fmt.Sprintf("--版本号:%s\n--服务端:http://%s:%d?%s=%s\n", m.buildVersion, IPV4(), m.port, keyFieldName, m.key))
 	_, _ = tm.Println(strings.Repeat("-", lineCharCount))
 	_, _ = tm.Println(tableContent)
 	tm.Flush()
@@ -147,12 +152,12 @@ func (m *Master) buildContent(renderNodes *orderedmap.OrderedMap[string, *NodeSt
 		if nowUnix-activeUnix > 15 {
 			runAt = activeUnix - item.StartAt
 			item.Speed = 0
-			m.NeedClearScreen = true
+			m.needClearScreen = true
 		}
 		speed += item.Speed
 
 		versionDiff := "√"
-		if item.BuildVersion != m.BuildVersion {
+		if item.BuildVersion != m.buildVersion {
 			versionDiff = "×"
 		}
 
@@ -167,8 +172,8 @@ func (m *Master) buildContent(renderNodes *orderedmap.OrderedMap[string, *NodeSt
 			versionDiff + item.BuildVersion,
 		}
 	})
-	runTime := int64(time.Now().Sub(m.StartAt).Seconds())
-	process := (float64(genCount) / float64(m.Config.MayCount)) * 100
+	runTime := int64(time.Now().Sub(m.startAt).Seconds())
+	process := (float64(genCount) / float64(m.config.MayCount)) * 100
 
 	tableBuf := &bytes.Buffer{}
 	table := tablewriter.NewWriter(tableBuf)
@@ -206,20 +211,20 @@ func (m *Master) buildContent(renderNodes *orderedmap.OrderedMap[string, *NodeSt
 
 	data = append(data, []string{
 		timeToString(runTime),
-		timeToString(int64(float64(m.Config.MayCount) / speed)),
+		timeToString(int64(float64(m.config.MayCount) / speed)),
 		fmt.Sprintf("%d", walletCount),
 		fmt.Sprintf("%d", genCount),
 		"",
 		"",
-		m.Config.Prefix,
-		m.Config.Suffix,
+		m.config.Prefix,
+		m.config.Suffix,
 	})
 
 	table.SetFooter([]string{
 		"生成速度",
 		fmt.Sprintf("%.2f 钱包/秒", speed),
 		"预计要",
-		fmt.Sprintf("%d", m.Config.MayCount),
+		fmt.Sprintf("%d", m.config.MayCount),
 		"",
 		"",
 		"进度",
@@ -233,13 +238,13 @@ func (m *Master) buildContent(renderNodes *orderedmap.OrderedMap[string, *NodeSt
 }
 
 func (m *Master) updateNode(pro *NodeStatusRequest) {
-	m.Locker.Lock()
-	defer m.Locker.Unlock()
-	if oldPro, exists := m.Nodes.Get(pro.Name); exists {
+	m.locker.Lock()
+	defer m.locker.Unlock()
+	if oldPro, exists := m.nodes.Get(pro.Name); exists {
 		pro.Count += oldPro.Count
 	}
 	pro.LastActiveAt = time.Now()
-	m.Nodes.Set(pro.Name, pro)
+	m.nodes.Set(pro.Name, pro)
 }
 func (m *Master) StartWebServer() {
 	gin.SetMode(gin.ReleaseMode)
@@ -253,12 +258,12 @@ func (m *Master) StartWebServer() {
 			return
 		}
 
-		if key != string(m.Key) {
+		if key != string(m.key) {
 			c.JSON(http.StatusBadRequest, "和服务端的 key 不匹配")
 			return
 		}
 
-		c.JSON(http.StatusOK, m.Config)
+		c.JSON(http.StatusOK, m.config)
 	})
 	// 上报状态
 	r.POST("/", func(c *gin.Context) {
@@ -281,17 +286,17 @@ func (m *Master) StartWebServer() {
 			MustError(m.storeWalletData(lo.FromPtr(pro.Address), lo.FromPtr(pro.EncryptMnemonic)))
 		}
 
-		c.JSON(http.StatusOK, m.ScreenOutput)
+		c.JSON(http.StatusOK, m.screenOutput)
 	})
 
-	addr := fmt.Sprintf(":%d", m.Port)
+	addr := fmt.Sprintf(":%d", m.port)
 	MustError(r.Run(addr))
 }
 
 func (m *Master) storeWalletData(address string, data string) error {
 
 	// 创建一个csv写入器
-	writer := csv.NewWriter(m.FilePoint)
+	writer := csv.NewWriter(m.filePoint)
 	// 循环写入数据
 	err := writer.Write([]string{address, data})
 	if err != nil {

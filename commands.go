@@ -63,7 +63,7 @@ var (
 		},
 		Action: func(cCtx *cli.Context) error {
 
-			defer Master.FilePoint.Close()
+			defer Master.Stop()
 
 			Master.Run()
 
@@ -124,10 +124,7 @@ var (
 		},
 		Action: func(cCtx *cli.Context) error {
 
-			defer Node.FilePoint.Close()
-
-			Node.Run()
-			return nil
+			return Node.Run()
 		},
 	}
 	decryptCommand = &cli.Command{
