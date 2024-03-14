@@ -244,6 +244,7 @@ func (m *Master) updateNode(pro *NodeStatusRequest) {
 	m.Locker.Lock()
 	defer m.Locker.Unlock()
 	if oldPro, exists := m.Nodes.Get(pro.Name); exists {
+		pro.Found += oldPro.Found
 		pro.Count += oldPro.Count
 	}
 	pro.LastActiveAt = time.Now()
