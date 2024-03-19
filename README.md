@@ -63,11 +63,11 @@ ethereum-wallet-generator-worker decrypt --key=rmkcmvvaevdzupda --data=Z8qTxdkhR
 
 ### 节点运行, 手机, 电脑, 台式机 (会统一从服务端拉取配置, 然后上报进度)
 
-| 系统        | 命令                                                                                                   |
-|-----------|------------------------------------------------------------------------------------------------------|
-| **Linux**    | `./ethereum-wallet-generator-worker  node --server="{$url}"`                                          |
-| **Windows** | `.\ethereum-wallet-generator-worker node --server="{$url}"`                                           |
-| **macOS** | `./ethereum-wallet-generator-worker master  node --server="{$url}"`                                   |
+| 系统        | 命令                                                                                                  |
+|-----------|-----------------------------------------------------------------------------------------------------|
+| **Linux**    | `./ethereum-wallet-generator-worker  worker --server="{$url}"`                                         |
+| **Windows** | `.\ethereum-wallet-generator-worker worker --server="{$url}"`                                          |
+| **macOS** | `./ethereum-wallet-generator-worker  worker --server="{$url}"`                                   |
 
 ## 已生成成功
 * `0x0000f31fE398080ef162841Cae9111735C919999`
