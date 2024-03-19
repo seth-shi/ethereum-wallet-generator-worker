@@ -1,21 +1,8 @@
-package internal
+package models
 
 import "time"
 
-const (
-	addressPrefix = "0x"
-	keyFieldName  = "key"
-	lineCharCount = 80
-	keyLength     = 16
-)
-
-type GetConfigRequest struct {
-	MayCount uint64 `json:"-"`
-	Prefix   string `json:"prefix"`
-	Suffix   string `json:"suffix"`
-}
-
-type NodeStatusRequest struct {
+type WorkStatusRequest struct {
 	Name    string  `json:"name"`
 	Count   int     `json:"gen_count"`
 	Found   int     `json:"found_count"`
@@ -23,8 +10,7 @@ type NodeStatusRequest struct {
 	StartAt int64   `json:"start_at"`
 
 	LastActiveAt time.Time `json:"-"`
-
-	BuildVersion string `json:"build_version"`
+	BuildVersion string    `json:"build_version"`
 
 	// 需要加密的数据
 	Address         *string `json:"address"`

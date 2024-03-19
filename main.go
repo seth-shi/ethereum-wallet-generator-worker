@@ -1,14 +1,16 @@
 package main
 
 import (
-	"github.com/seth-shi/ethereum-wallet-generator-nodes/internal"
+	"github.com/seth-shi/ethereum-wallet-generator-nodes/internal/master"
+	"github.com/seth-shi/ethereum-wallet-generator-nodes/internal/utils"
+	"github.com/seth-shi/ethereum-wallet-generator-nodes/internal/worker"
 	"github.com/urfave/cli/v2"
 	"os"
 )
 
 var (
-	Master *internal.Master
-	Node   *internal.Node
+	Master *master.Master
+	Worker *worker.Worker
 )
 
 func main() {
@@ -16,10 +18,10 @@ func main() {
 	app := &cli.App{
 		Commands: []*cli.Command{
 			masterCommand,
-			nodeCommand,
+			workerCommand,
 			decryptCommand,
 		},
 	}
 
-	internal.MustError(app.Run(os.Args))
+	utils.MustError(app.Run(os.Args))
 }

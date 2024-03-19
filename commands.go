@@ -4,7 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"github.com/go-resty/resty/v2"
-	"github.com/seth-shi/ethereum-wallet-generator-nodes/internal"
+	"github.com/seth-shi/ethereum-wallet-generator-nodes/internal/master"
+	"github.com/seth-shi/ethereum-wallet-generator-nodes/internal/models"
+	"github.com/seth-shi/ethereum-wallet-generator-nodes/internal/utils"
+	"github.com/seth-shi/ethereum-wallet-generator-nodes/internal/worker"
 	"github.com/urfave/cli/v2"
 	"net/http"
 	"runtime"
@@ -55,7 +58,7 @@ var (
 				return errors.New("钱包前缀和后缀不能同时为空")
 			}
 
-			if Master, err = internal.NewMaster(port, prefix, suffix, key); err != nil {
+			if Master, err = master.NewMaster(port, key, prefix, suffix); err != nil {
 				return
 			}
 
@@ -63,15 +66,11 @@ var (
 		},
 		Action: func(cCtx *cli.Context) error {
 
-			defer Master.FilePoint.Close()
-
-			Master.Run()
-
-			return nil
+			return Master.Run()
 		},
 	}
-	nodeCommand = &cli.Command{
-		Name:  "node",
+	workerCommand = &cli.Command{
+		Name:  "worker",
 		Usage: "生成节点",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
@@ -94,20 +93,20 @@ var (
 			var (
 				c          = cCtx.Uint("c")
 				serverHost = cCtx.String("server")
-				nodeName   = cCtx.String("name")
+				workerName = cCtx.String("name")
 			)
 			if c == 0 {
 				c = uint(runtime.NumCPU())
 			}
 
-			if nodeName == "" {
-				nodeName = internal.GetNodeName()
+			if workerName == "" {
+				workerName = utils.GenWorkerName()
 			}
-			fmt.Printf("节点:[%s]启动中...\n", nodeName)
+			fmt.Printf("worker:[%s]启动中...\n", workerName)
 
 			// 从服务端获取配置
-			var apiRes internal.GetConfigRequest
-			resp, err := resty.New().SetTimeout(time.Second * 3).R().SetResult(&apiRes).Get(serverHost)
+			var mc models.MatchConfig
+			resp, err := resty.New().SetTimeout(time.Second * 3).R().SetResult(&mc).Get(serverHost)
 			if err != nil {
 				return err
 			}
@@ -116,18 +115,12 @@ var (
 				return errors.New(fmt.Sprintf("获取配置失败[%d]%s", resp.StatusCode(), resp.String()))
 			}
 
-			if Node, err = internal.NewNode(serverHost, apiRes, c, nodeName); err != nil {
-				return err
-			}
-
-			return nil
+			Worker, err = worker.NewWorker(serverHost, &mc, c, workerName)
+			return err
 		},
 		Action: func(cCtx *cli.Context) error {
 
-			defer Node.FilePoint.Close()
-
-			Node.Run()
-			return nil
+			return Worker.Run()
 		},
 	}
 	decryptCommand = &cli.Command{
@@ -175,7 +168,7 @@ var (
 				return errors.New("助记词只能返回12个")
 			}
 
-			decryptBytes, err := internal.AesGcmDecrypt(data, []byte(key))
+			decryptBytes, err := utils.AesGcmDecrypt(data, []byte(key))
 			if err != nil {
 				return errors.New(fmt.Sprintf("解密失败:%s", err.Error()))
 			}
