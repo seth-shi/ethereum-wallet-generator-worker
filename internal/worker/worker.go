@@ -4,17 +4,18 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	tm "github.com/buger/goterm"
-	"github.com/go-resty/resty/v2"
-	"github.com/samber/lo"
-	"github.com/seth-shi/ethereum-wallet-generator-nodes/internal/consts"
-	"github.com/seth-shi/ethereum-wallet-generator-nodes/internal/models"
-	"github.com/seth-shi/ethereum-wallet-generator-nodes/internal/utils"
 	"net/http"
 	"net/url"
 	"strings"
 	"sync/atomic"
 	"time"
+
+	tm "github.com/buger/goterm"
+	"github.com/go-resty/resty/v2"
+	"github.com/samber/lo"
+	"github.com/seth-shi/ethereum-wallet-generator-worker/internal/consts"
+	"github.com/seth-shi/ethereum-wallet-generator-worker/internal/models"
+	"github.com/seth-shi/ethereum-wallet-generator-worker/internal/utils"
 )
 
 type Worker struct {

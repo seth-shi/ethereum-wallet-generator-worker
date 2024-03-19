@@ -2,13 +2,14 @@ package worker
 
 import (
 	"fmt"
-	"github.com/ethereum/go-ethereum/accounts"
-	hdwallet "github.com/miguelmota/go-ethereum-hdwallet"
-	"github.com/seth-shi/ethereum-wallet-generator-nodes/internal/models"
-	"github.com/tyler-smith/go-bip39"
 	"strings"
 	"sync/atomic"
 	"time"
+
+	"github.com/ethereum/go-ethereum/accounts"
+	hdwallet "github.com/miguelmota/go-ethereum-hdwallet"
+	"github.com/seth-shi/ethereum-wallet-generator-worker/internal/models"
+	"github.com/tyler-smith/go-bip39"
 )
 
 type RunStatus struct {

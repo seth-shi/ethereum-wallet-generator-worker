@@ -4,19 +4,20 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	tm "github.com/buger/goterm"
-	"github.com/gin-gonic/gin"
-	"github.com/olekukonko/tablewriter"
-	"github.com/samber/lo"
-	"github.com/seth-shi/ethereum-wallet-generator-nodes/internal/consts"
-	"github.com/seth-shi/ethereum-wallet-generator-nodes/internal/models"
-	"github.com/seth-shi/ethereum-wallet-generator-nodes/internal/utils"
 	"io"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
 	"time"
+
+	tm "github.com/buger/goterm"
+	"github.com/gin-gonic/gin"
+	"github.com/olekukonko/tablewriter"
+	"github.com/samber/lo"
+	"github.com/seth-shi/ethereum-wallet-generator-worker/internal/consts"
+	"github.com/seth-shi/ethereum-wallet-generator-worker/internal/models"
+	"github.com/seth-shi/ethereum-wallet-generator-worker/internal/utils"
 )
 
 type Master struct {

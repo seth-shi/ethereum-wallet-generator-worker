@@ -1,4 +1,4 @@
-module github.com/seth-shi/ethereum-wallet-generator-nodes
+module github.com/seth-shi/ethereum-wallet-generator-worker
 
 go 1.21.0
 

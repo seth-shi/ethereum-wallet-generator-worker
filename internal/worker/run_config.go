@@ -4,10 +4,11 @@ import (
 	"encoding/csv"
 	"errors"
 	"fmt"
-	"github.com/seth-shi/ethereum-wallet-generator-nodes/internal/consts"
-	"github.com/seth-shi/ethereum-wallet-generator-nodes/internal/models"
-	"github.com/seth-shi/ethereum-wallet-generator-nodes/internal/utils"
 	"os"
+
+	"github.com/seth-shi/ethereum-wallet-generator-worker/internal/consts"
+	"github.com/seth-shi/ethereum-wallet-generator-worker/internal/models"
+	"github.com/seth-shi/ethereum-wallet-generator-worker/internal/utils"
 )
 
 type RunConfig struct {

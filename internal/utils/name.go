@@ -2,12 +2,13 @@ package utils
 
 import (
 	"fmt"
-	"github.com/go-resty/resty/v2"
 	"net"
 	"os/user"
 	"runtime/debug"
 	"strings"
 	"time"
+
+	"github.com/go-resty/resty/v2"
 )
 
 func GetBuildVersion() string {

@@ -2,9 +2,10 @@ package utils
 
 import (
 	"errors"
-	"github.com/seth-shi/ethereum-wallet-generator-nodes/internal/consts"
 	"net/url"
 	"strings"
+
+	"github.com/seth-shi/ethereum-wallet-generator-worker/internal/consts"
 )
 
 func ParseQueryKey(fullUrl string) (string, string, error) {

@@ -2,9 +2,10 @@ package models
 
 import (
 	"fmt"
-	"github.com/seth-shi/ethereum-wallet-generator-nodes/internal/consts"
 	"math"
 	"strings"
+
+	"github.com/seth-shi/ethereum-wallet-generator-worker/internal/consts"
 )
 
 type MatchConfig struct {

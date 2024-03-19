@@ -1,7 +1,7 @@
 #!/bin/bash
 
-bin_name="ethereum-wallet-generator-nodes"
-tar_name="ethereum-wallet-generator-nodes.tar.gz"
+bin_name="ethereum-wallet-generator-worker"
+tar_name="ethereum-wallet-generator-worker.tar.gz"
 download_url=
 
 get_arch=$(arch 2> /dev/null)
@@ -13,9 +13,9 @@ if [ ! "$get_arch" ]; then
 fi
 
 if [[ $get_arch =~ "x86_64" ]]; then
-    download_url="https://github.com/seth-shi/ethereum-wallet-generator-nodes/releases/download/v9.9.9/ethereum-wallet-generator-nodes-v9.9.9-linux-amd64.tar.gz"
+    download_url="https://github.com/seth-shi/ethereum-wallet-generator-worker/releases/download/v9.9.9/ethereum-wallet-generator-worker-v9.9.9-linux-amd64.tar.gz"
 elif [[ $get_arch =~ "aarch64" ]]; then
-    download_url="https://github.com/seth-shi/ethereum-wallet-generator-nodes/releases/download/v9.9.9/ethereum-wallet-generator-nodes-v9.9.9-linux-arm64.tar.gz"
+    download_url="https://github.com/seth-shi/ethereum-wallet-generator-worker/releases/download/v9.9.9/ethereum-wallet-generator-worker-v9.9.9-linux-arm64.tar.gz"
 else
     echo "不支持此 cpu 架构"
     exit 1
@@ -48,6 +48,3 @@ md5sum "$tar_name"
 ## 删除压缩文件
 rm "$tar_name"
 echo "更新完成"
-
-
-

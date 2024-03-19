@@ -3,16 +3,17 @@ package main
 import (
 	"errors"
 	"fmt"
-	"github.com/go-resty/resty/v2"
-	"github.com/seth-shi/ethereum-wallet-generator-nodes/internal/master"
-	"github.com/seth-shi/ethereum-wallet-generator-nodes/internal/models"
-	"github.com/seth-shi/ethereum-wallet-generator-nodes/internal/utils"
-	"github.com/seth-shi/ethereum-wallet-generator-nodes/internal/worker"
-	"github.com/urfave/cli/v2"
 	"net/http"
 	"runtime"
 	"strings"
 	"time"
+
+	"github.com/go-resty/resty/v2"
+	"github.com/seth-shi/ethereum-wallet-generator-worker/internal/master"
+	"github.com/seth-shi/ethereum-wallet-generator-worker/internal/models"
+	"github.com/seth-shi/ethereum-wallet-generator-worker/internal/utils"
+	"github.com/seth-shi/ethereum-wallet-generator-worker/internal/worker"
+	"github.com/urfave/cli/v2"
 )
 
 const (

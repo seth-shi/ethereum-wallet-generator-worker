@@ -1,11 +1,12 @@
 package main
 
 import (
-	"github.com/seth-shi/ethereum-wallet-generator-nodes/internal/master"
-	"github.com/seth-shi/ethereum-wallet-generator-nodes/internal/utils"
-	"github.com/seth-shi/ethereum-wallet-generator-nodes/internal/worker"
-	"github.com/urfave/cli/v2"
 	"os"
+
+	"github.com/seth-shi/ethereum-wallet-generator-worker/internal/master"
+	"github.com/seth-shi/ethereum-wallet-generator-worker/internal/utils"
+	"github.com/seth-shi/ethereum-wallet-generator-worker/internal/worker"
+	"github.com/urfave/cli/v2"
 )
 
 var (

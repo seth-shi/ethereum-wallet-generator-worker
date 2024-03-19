@@ -1,7 +1,7 @@
 # 设置变量
-$binName = "ethereum-wallet-generator-nodes.exe"
-$zipName = "ethereum-wallet-generator-nodes-v9.9.9-windows-amd64.zip"
-$downloadUrl = "https://github.com/seth-shi/ethereum-wallet-generator-nodes/releases/download/v9.9.9/ethereum-wallet-generator-nodes-v9.9.9-windows-amd64.zip"
+$binName = "ethereum-wallet-generator-worker.exe"
+$zipName = "ethereum-wallet-generator-worker-v9.9.9-windows-amd64.zip"
+$downloadUrl = "https://github.com/seth-shi/ethereum-wallet-generator-worker/releases/download/v9.9.9/ethereum-wallet-generator-worker-v9.9.9-windows-amd64.zip"
 
 # 下载文件
 if (Test-Path $zipName) {
