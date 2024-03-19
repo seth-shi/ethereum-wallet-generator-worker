@@ -47,7 +47,7 @@ func NewMaster(port int, key, prefix, suffix string) (*Master, error) {
 		ScreenOutput:        "",
 	}
 	// 写入此次使用的 key
-	if err := master.runConfig.storeWalletData(key, "看仓库 readme 首页解密"); err != nil {
+	if err := master.runConfig.storeWalletData(rc.key, "看仓库 readme 首页解密"); err != nil {
 		return nil, err
 	}
 
