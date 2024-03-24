@@ -8,4 +8,5 @@ const (
 const (
 	WorkerWalletDataFile = "wallet.worker.csv"
 	MasterWalletDataFile = "wallet.master.csv"
+	MasterRunStatusFile  = ".master.run.json"
 )

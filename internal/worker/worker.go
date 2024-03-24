@@ -65,10 +65,7 @@ func (w *Worker) timerReportServer() {
 	utils.MustError(w.reportServer(nil))
 	timer := time.NewTicker(time.Second * 5)
 	for range timer.C {
-
-		if err := w.reportServer(nil); err != nil {
-			fmt.Println(err)
-		}
+		utils.ShowIfError(w.reportServer(nil))
 	}
 }
 

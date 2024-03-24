@@ -34,7 +34,18 @@ type Master struct {
 
 func NewMaster(port int, key, prefix, suffix string) (*Master, error) {
 
-	rc, err := newRunConfig(port, key)
+	var (
+		cacheStatus = getStatusByCache()
+		works       []*models.WorkStatusRequest
+		startAt     = time.Now()
+	)
+	if cacheStatus != nil {
+		fmt.Printf("进度从缓存中恢复:%s", cacheStatus.StartAt.Format(time.DateTime))
+		startAt = cacheStatus.StartAt
+		works = cacheStatus.Workers
+	}
+
+	rc, err := newRunConfig(port, key, startAt)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +53,7 @@ func NewMaster(port int, key, prefix, suffix string) (*Master, error) {
 	master := &Master{
 		matchConfig:         models.NewMatchConfig(prefix, suffix),
 		runConfig:           rc,
-		WorkerStatusManager: models.NewNodeStatusManager(),
+		WorkerStatusManager: models.NewNodeStatusManager(works),
 		NeedClearScreen:     true,
 		ScreenOutput:        "",
 	}
@@ -57,6 +68,7 @@ func NewMaster(port int, key, prefix, suffix string) (*Master, error) {
 func (m *Master) Run() error {
 
 	go m.StartWebServer()
+	go m.tickerSaveRunStatus()
 
 	ticker := time.NewTicker(time.Second * 1)
 
@@ -253,4 +265,16 @@ func (m *Master) StartWebServer() {
 
 	addr := fmt.Sprintf(":%d", m.runConfig.Port)
 	utils.MustError(r.Run(addr))
+}
+
+func (m *Master) tickerSaveRunStatus() {
+	ticker := time.NewTicker(time.Minute * 1)
+	for range ticker.C {
+
+		data := models.MasterRunStatusCache{
+			Workers: m.WorkerStatusManager.All(),
+			StartAt: m.runConfig.StartAt,
+		}
+		utils.ShowIfError(setStatusToCache(data))
+	}
 }

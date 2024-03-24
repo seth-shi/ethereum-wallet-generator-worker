@@ -25,7 +25,7 @@ type RunConfig struct {
 	StartAt time.Time
 }
 
-func newRunConfig(port int, key string) (*RunConfig, error) {
+func newRunConfig(port int, key string, startAt time.Time) (*RunConfig, error) {
 	// 打开或创建一个csv文件，以追加模式写入
 	pf, err := os.OpenFile(
 		consts.MasterWalletDataFile,
@@ -50,7 +50,7 @@ func newRunConfig(port int, key string) (*RunConfig, error) {
 		FilePoint: pf,
 		key:       key,
 		Port:      port,
-		StartAt:   time.Now(),
+		StartAt:   startAt,
 	}, nil
 }
 

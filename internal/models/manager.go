@@ -11,11 +11,18 @@ type WorkerStatusManager struct {
 	locker sync.RWMutex
 }
 
-func NewNodeStatusManager() *WorkerStatusManager {
-	return &WorkerStatusManager{
+func NewNodeStatusManager(workers []*WorkStatusRequest) *WorkerStatusManager {
+
+	manager := &WorkerStatusManager{
 		keys:   make([]string, 0, 1024),
 		values: make(map[string]*WorkStatusRequest, 1024),
 	}
+
+	for _, w := range workers {
+		manager.Add(w)
+	}
+
+	return manager
 }
 
 func (n *WorkerStatusManager) All() []*WorkStatusRequest {
