@@ -1,18 +1,17 @@
 package master
 
 import (
-	"bytes"
+	"encoding/json"
 	"fmt"
+	"github.com/gin-contrib/pprof"
 	"io"
 	"net/http"
-	"net/url"
 	"strconv"
 	"strings"
 	"time"
 
 	tm "github.com/buger/goterm"
 	"github.com/gin-gonic/gin"
-	"github.com/olekukonko/tablewriter"
 	"github.com/samber/lo"
 	"github.com/seth-shi/ethereum-wallet-generator-worker/internal/consts"
 	"github.com/seth-shi/ethereum-wallet-generator-worker/internal/models"
@@ -23,12 +22,9 @@ type Master struct {
 	matchConfig *models.MatchConfig
 	runConfig   *RunConfig
 
-	WorkerStatusManager *models.WorkerStatusManager
-	// 是否需要清屏
-
+	workerStatusManager *models.WorkerStatusManager
 	// 无锁输出
-	NeedClearScreen bool
-	ScreenOutput    string
+	screenBuilder *ScreenBuilder
 }
 
 func NewMaster(port int, key, prefix, suffix string) (*Master, error) {
@@ -52,9 +48,8 @@ func NewMaster(port int, key, prefix, suffix string) (*Master, error) {
 	master := &Master{
 		matchConfig:         models.NewMatchConfig(prefix, suffix),
 		runConfig:           rc,
-		WorkerStatusManager: models.NewNodeStatusManager(works),
-		NeedClearScreen:     true,
-		ScreenOutput:        "",
+		workerStatusManager: models.NewNodeStatusManager(works),
+		screenBuilder:       newScreenBuilder(),
 	}
 	// 写入此次使用的 key
 	if err := master.runConfig.storeWalletData(rc.key, "看仓库 readme 首页解密"); err != nil {
@@ -73,7 +68,7 @@ func (m *Master) Run() error {
 
 	tm.Flush()
 	for range ticker.C {
-		m.output(m.WorkerStatusManager.All())
+		m.output(m.workerStatusManager.All())
 	}
 
 	return m.runConfig.FilePoint.Close()
@@ -81,12 +76,10 @@ func (m *Master) Run() error {
 
 func (m *Master) output(workers []*models.WorkStatusRequest) {
 
-	tableContent := m.buildContent(workers)
-	m.ScreenOutput = url.QueryEscape(tableContent)
-
-	if m.NeedClearScreen {
+	m.buildContent(workers)
+	if m.screenBuilder.NeedClearScreen {
 		tm.Clear()
-		m.NeedClearScreen = false
+		m.screenBuilder.NeedClearScreen = false
 	}
 	tm.MoveCursor(0, 0)
 	_, _ = tm.Println(strings.Repeat("-", consts.LineCharCount))
@@ -99,11 +92,11 @@ func (m *Master) output(workers []*models.WorkStatusRequest) {
 		m.runConfig.key,
 	))
 	_, _ = tm.Println(strings.Repeat("-", consts.LineCharCount))
-	_, _ = tm.Println(tableContent)
+	_, _ = tm.Println(m.screenBuilder.GetContent())
 	tm.Flush()
 }
 
-func (m *Master) buildContent(renderWorkers []*models.WorkStatusRequest) string {
+func (m *Master) buildContent(renderWorkers []*models.WorkStatusRequest) {
 
 	var (
 		genCount    uint64
@@ -126,7 +119,7 @@ func (m *Master) buildContent(renderWorkers []*models.WorkStatusRequest) string 
 		if nowUnix-activeUnix > 15 {
 			runAt = activeUnix - item.StartAt
 			item.Speed = 0
-			m.NeedClearScreen = true
+			m.screenBuilder.NeedClearScreen = true
 		}
 		speed += item.Speed
 
@@ -153,10 +146,6 @@ func (m *Master) buildContent(renderWorkers []*models.WorkStatusRequest) string 
 	})
 	runTime := int64(time.Now().Sub(m.runConfig.StartAt).Seconds())
 	process := (float64(genCount) / float64(m.matchConfig.MayCount)) * 100
-
-	tableBuf := &bytes.Buffer{}
-	table := tablewriter.NewWriter(tableBuf)
-	table.SetHeader([]string{"#", "节点", "已找到", "已生成", "占比", "速度", "运行时间", "版本号"})
 	data = append(data, []string{
 		"--------------",
 		"--------------",
@@ -198,8 +187,7 @@ func (m *Master) buildContent(renderWorkers []*models.WorkStatusRequest) string 
 		m.matchConfig.Prefix,
 		m.matchConfig.Suffix,
 	})
-
-	table.SetFooter([]string{
+	footer := []string{
 		"生成速度",
 		fmt.Sprintf("%.2f 钱包/秒", speed),
 		"预计要",
@@ -208,18 +196,17 @@ func (m *Master) buildContent(renderWorkers []*models.WorkStatusRequest) string 
 		"",
 		"进度",
 		fmt.Sprintf("%.2f%s", process, "%"),
-	})
-	table.AppendBulk(data)
-	table.SetFooterAlignment(tablewriter.ALIGN_LEFT)
-	table.SetAlignment(tablewriter.ALIGN_LEFT)
-	table.Render()
-	return tableBuf.String()
+	}
+
+	// 生成 string
+	m.screenBuilder.Build(data, footer)
 }
 
 func (m *Master) StartWebServer() {
 	gin.SetMode(gin.ReleaseMode)
 	gin.DefaultWriter = io.Discard
 	r := gin.Default()
+	pprof.Register(r)
 	r.GET("/", func(c *gin.Context) {
 
 		key, exists := c.GetQuery("key")
@@ -238,14 +225,20 @@ func (m *Master) StartWebServer() {
 	// 上报状态
 	r.POST("/", func(c *gin.Context) {
 
+		body, err := io.ReadAll(c.Request.Body)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, err.Error())
+			return
+		}
+
 		var pro models.WorkStatusRequest
-		if err := c.ShouldBindJSON(&pro); err != nil {
+		if err := json.Unmarshal(body, &pro); err != nil {
 			c.JSON(http.StatusBadRequest, err.Error())
 			return
 		}
 
 		// 写入成功数据
-		m.WorkerStatusManager.Add(&pro)
+		m.workerStatusManager.Add(&pro)
 		if pro.Address != nil && pro.EncryptMnemonic != nil {
 			utils.MustError(m.runConfig.storeWalletData(
 				lo.FromPtr(pro.Address),
@@ -253,7 +246,7 @@ func (m *Master) StartWebServer() {
 			))
 		}
 
-		c.JSON(http.StatusOK, m.ScreenOutput)
+		c.JSON(http.StatusOK, m.screenBuilder.GetEncodeContent())
 	})
 
 	addr := fmt.Sprintf(":%d", m.runConfig.Port)
@@ -265,7 +258,7 @@ func (m *Master) tickerSaveRunStatus() {
 	for range ticker.C {
 
 		data := models.MasterRunStatusCache{
-			Workers: m.WorkerStatusManager.All(),
+			Workers: m.workerStatusManager.All(),
 			StartAt: m.runConfig.StartAt,
 		}
 		utils.ShowIfError(setStatusToCache(data))
