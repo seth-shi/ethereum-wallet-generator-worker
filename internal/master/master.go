@@ -2,7 +2,6 @@ package master
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -239,14 +238,8 @@ func (m *Master) StartWebServer() {
 	// 上报状态
 	r.POST("/", func(c *gin.Context) {
 
-		body, err := io.ReadAll(c.Request.Body)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, err.Error())
-			return
-		}
-
 		var pro models.WorkStatusRequest
-		if err := json.Unmarshal(body, &pro); err != nil {
+		if err := c.ShouldBindJSON(&pro); err != nil {
 			c.JSON(http.StatusBadRequest, err.Error())
 			return
 		}
