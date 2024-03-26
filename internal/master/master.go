@@ -1,8 +1,10 @@
 package master
 
 import (
-	"bytes"
+	"encoding/json"
 	"fmt"
+	"github.com/olekukonko/tablewriter"
+	"github.com/seth-shi/ethereum-wallet-generator-worker/internal/consts"
 	"io"
 	"net/http"
 	"net/url"
@@ -10,11 +12,8 @@ import (
 	"strings"
 	"time"
 
-	tm "github.com/buger/goterm"
 	"github.com/gin-gonic/gin"
-	"github.com/olekukonko/tablewriter"
 	"github.com/samber/lo"
-	"github.com/seth-shi/ethereum-wallet-generator-worker/internal/consts"
 	"github.com/seth-shi/ethereum-wallet-generator-worker/internal/models"
 	"github.com/seth-shi/ethereum-wallet-generator-worker/internal/utils"
 )
@@ -23,12 +22,10 @@ type Master struct {
 	matchConfig *models.MatchConfig
 	runConfig   *RunConfig
 
-	WorkerStatusManager *models.WorkerStatusManager
-	// 是否需要清屏
-
+	workerStatusManager *models.WorkerStatusManager
 	// 无锁输出
-	NeedClearScreen bool
-	ScreenOutput    string
+	Title         string
+	WorkerContent string
 }
 
 func NewMaster(port int, key, prefix, suffix string) (*Master, error) {
@@ -50,11 +47,17 @@ func NewMaster(port int, key, prefix, suffix string) (*Master, error) {
 	}
 
 	master := &Master{
+		Title: fmt.Sprintf(
+			"--版本号:%s\n--服务端:http://%s:%d?%s=%s\n",
+			rc.Version,
+			utils.IPV4(),
+			rc.Port,
+			consts.QueryKeyFieldName,
+			rc.key,
+		),
 		matchConfig:         models.NewMatchConfig(prefix, suffix),
 		runConfig:           rc,
-		WorkerStatusManager: models.NewNodeStatusManager(works),
-		NeedClearScreen:     true,
-		ScreenOutput:        "",
+		workerStatusManager: models.NewNodeStatusManager(works),
 	}
 	// 写入此次使用的 key
 	if err := master.runConfig.storeWalletData(rc.key, "看仓库 readme 首页解密"); err != nil {
@@ -69,11 +72,16 @@ func (m *Master) Run() error {
 	go m.StartWebServer()
 	go m.tickerSaveRunStatus()
 
-	ticker := time.NewTicker(time.Second * 1)
+	var lastMinute = time.Now().Minute()
+	for ts := range time.Tick(time.Second) {
 
-	tm.Flush()
-	for range ticker.C {
-		m.output(m.WorkerStatusManager.All())
+		nowMinute := ts.Minute()
+		if nowMinute > lastMinute {
+			lastMinute = nowMinute
+			fmt.Print("\033[H\033[2J")
+		}
+
+		m.output(m.workerStatusManager.All())
 	}
 
 	return m.runConfig.FilePoint.Close()
@@ -81,26 +89,13 @@ func (m *Master) Run() error {
 
 func (m *Master) output(workers []*models.WorkStatusRequest) {
 
-	tableContent := m.buildContent(workers)
-	m.ScreenOutput = url.QueryEscape(tableContent)
-
-	if m.NeedClearScreen {
-		tm.Clear()
-		m.NeedClearScreen = false
-	}
-	tm.MoveCursor(0, 0)
-	_, _ = tm.Println(strings.Repeat("-", consts.LineCharCount))
-	_, _ = tm.Print(fmt.Sprintf(
-		"--版本号:%s\n--服务端:http://%s:%d?%s=%s\n",
-		m.runConfig.Version,
-		utils.IPV4(),
-		m.runConfig.Port,
-		consts.QueryKeyFieldName,
-		m.runConfig.key,
-	))
-	_, _ = tm.Println(strings.Repeat("-", consts.LineCharCount))
-	_, _ = tm.Println(tableContent)
-	tm.Flush()
+	fmt.Printf(
+		"\u001B[H%s\n%s\n%s\n%s",
+		strings.Repeat("-", consts.LineCharCount),
+		m.Title,
+		strings.Repeat("-", consts.LineCharCount),
+		m.buildContent(workers),
+	)
 }
 
 func (m *Master) buildContent(renderWorkers []*models.WorkStatusRequest) string {
@@ -126,7 +121,6 @@ func (m *Master) buildContent(renderWorkers []*models.WorkStatusRequest) string 
 		if nowUnix-activeUnix > 15 {
 			runAt = activeUnix - item.StartAt
 			item.Speed = 0
-			m.NeedClearScreen = true
 		}
 		speed += item.Speed
 
@@ -153,10 +147,6 @@ func (m *Master) buildContent(renderWorkers []*models.WorkStatusRequest) string 
 	})
 	runTime := int64(time.Now().Sub(m.runConfig.StartAt).Seconds())
 	process := (float64(genCount) / float64(m.matchConfig.MayCount)) * 100
-
-	tableBuf := &bytes.Buffer{}
-	table := tablewriter.NewWriter(tableBuf)
-	table.SetHeader([]string{"#", "节点", "已找到", "已生成", "占比", "速度", "运行时间", "版本号"})
 	data = append(data, []string{
 		"--------------",
 		"--------------",
@@ -198,8 +188,7 @@ func (m *Master) buildContent(renderWorkers []*models.WorkStatusRequest) string 
 		m.matchConfig.Prefix,
 		m.matchConfig.Suffix,
 	})
-
-	table.SetFooter([]string{
+	footer := []string{
 		"生成速度",
 		fmt.Sprintf("%.2f 钱包/秒", speed),
 		"预计要",
@@ -208,12 +197,20 @@ func (m *Master) buildContent(renderWorkers []*models.WorkStatusRequest) string 
 		"",
 		"进度",
 		fmt.Sprintf("%.2f%s", process, "%"),
-	})
-	table.AppendBulk(data)
-	table.SetFooterAlignment(tablewriter.ALIGN_LEFT)
-	table.SetAlignment(tablewriter.ALIGN_LEFT)
-	table.Render()
-	return tableBuf.String()
+	}
+
+	buf := &strings.Builder{}
+	tab := tablewriter.NewWriter(buf)
+	tab.SetHeader([]string{"#", "节点", "已找到", "已生成", "占比", "速度", "运行时间", "版本号"})
+	tab.AppendBulk(data)
+	tab.SetFooter(footer)
+	tab.SetFooterAlignment(tablewriter.ALIGN_LEFT)
+	tab.SetAlignment(tablewriter.ALIGN_LEFT)
+	tab.Render()
+
+	originContent := buf.String()
+	m.WorkerContent = url.QueryEscape(originContent)
+	return originContent
 }
 
 func (m *Master) StartWebServer() {
@@ -238,14 +235,20 @@ func (m *Master) StartWebServer() {
 	// 上报状态
 	r.POST("/", func(c *gin.Context) {
 
+		body, err := io.ReadAll(c.Request.Body)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, err.Error())
+			return
+		}
+
 		var pro models.WorkStatusRequest
-		if err := c.ShouldBindJSON(&pro); err != nil {
+		if err := json.Unmarshal(body, &pro); err != nil {
 			c.JSON(http.StatusBadRequest, err.Error())
 			return
 		}
 
 		// 写入成功数据
-		m.WorkerStatusManager.Add(&pro)
+		m.workerStatusManager.Add(&pro)
 		if pro.Address != nil && pro.EncryptMnemonic != nil {
 			utils.MustError(m.runConfig.storeWalletData(
 				lo.FromPtr(pro.Address),
@@ -253,7 +256,7 @@ func (m *Master) StartWebServer() {
 			))
 		}
 
-		c.JSON(http.StatusOK, m.ScreenOutput)
+		c.JSON(http.StatusOK, m.WorkerContent)
 	})
 
 	addr := fmt.Sprintf(":%d", m.runConfig.Port)
@@ -261,11 +264,10 @@ func (m *Master) StartWebServer() {
 }
 
 func (m *Master) tickerSaveRunStatus() {
-	ticker := time.NewTicker(time.Minute * 1)
-	for range ticker.C {
+	for range time.Tick(time.Minute * 1) {
 
 		data := models.MasterRunStatusCache{
-			Workers: m.WorkerStatusManager.All(),
+			Workers: m.workerStatusManager.All(),
 			StartAt: m.runConfig.StartAt,
 		}
 		utils.ShowIfError(setStatusToCache(data))

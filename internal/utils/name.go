@@ -7,8 +7,6 @@ import (
 	"runtime/debug"
 	"strings"
 	"time"
-
-	"github.com/go-resty/resty/v2"
 )
 
 func GetBuildVersion() string {
@@ -65,14 +63,4 @@ func GenWorkerName() string {
 	}
 
 	return fmt.Sprintf("%s@%s-%s", prefix, suffix, value)
-}
-
-func IPV4() string {
-
-	resp, err := resty.New().SetTimeout(time.Second * 3).R().Get("https://api.ipify.org")
-	if err != nil {
-		return ""
-	}
-
-	return resp.String()
 }
