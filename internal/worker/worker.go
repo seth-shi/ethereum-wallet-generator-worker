@@ -10,7 +10,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	tm "github.com/buger/goterm"
 	"github.com/go-resty/resty/v2"
 	"github.com/samber/lo"
 	"github.com/seth-shi/ethereum-wallet-generator-worker/internal/consts"
@@ -20,6 +19,7 @@ import (
 
 type Worker struct {
 	// 配置
+	Title        string
 	matchConfig  *models.MatchConfig
 	runConfig    *RunConfig
 	runStatus    *RunStatus
@@ -35,6 +35,7 @@ func NewWorker(fullUrl string, mc *models.MatchConfig, c uint, nodeName string) 
 	}
 
 	return &Worker{
+		Title:        fmt.Sprintf("--版本号:%s\n--节点名:%s 线程*%d", runConfig.Version, runConfig.Name, runConfig.C),
 		matchConfig:  mc,
 		runConfig:    runConfig,
 		runStatus:    newRunStatus(),
@@ -63,8 +64,7 @@ func (w *Worker) timerReportServer() {
 
 	// 上报时长 5s
 	utils.MustError(w.reportServer(nil))
-	timer := time.NewTicker(time.Second * 5)
-	for range timer.C {
+	for range time.Tick(time.Second * 2) {
 		utils.ShowIfError(w.reportServer(nil))
 	}
 }
@@ -72,7 +72,6 @@ func (w *Worker) timerReportServer() {
 func (w *Worker) loopMatchWallets() {
 
 	for {
-
 		newWalletData := w.runStatus.matchNewWallet(w.matchConfig)
 		if newWalletData != nil {
 			if err := w.reportServer(newWalletData); err != nil {
@@ -85,31 +84,28 @@ func (w *Worker) loopMatchWallets() {
 }
 
 func (w *Worker) timerOutput() {
-	timer := time.NewTicker(time.Second)
-	tm.Clear()
 	var lastMinute = time.Now().Minute()
-	for ts := range timer.C {
+	for ts := range time.Tick(time.Second) {
 
 		nowMinute := ts.Minute()
 		if nowMinute > lastMinute {
 			lastMinute = nowMinute
-			tm.Clear()
+			fmt.Print("\033[H\033[2J")
 		}
 
-		// 永远返回不失败
-		tm.MoveCursor(0, 0)
-		_, _ = tm.Println(strings.Repeat("-", consts.LineCharCount))
-		tm.MoveCursor(0, 2)
-		_, _ = tm.Println(fmt.Sprintf("--版本号:%s", w.runConfig.Version))
-		_, _ = tm.Println(fmt.Sprintf("--节点名:%s 线程*%d", w.runConfig.Name, w.runConfig.C))
-		_, _ = tm.Println(fmt.Sprintf(
-			"--实时速度: %.2f 钱包/秒 生成:%d 找到:%d",
-			w.runStatus.Speed(),
-			w.runStatus.TotalCount.Load(),
-			w.runStatus.FoundCount.Load(),
-		))
-		_, _ = tm.Println(*w.outputString.Load())
-		tm.Flush()
+		fmt.Printf(
+			"\u001B[H%s\n%s\n%s\n%s\n%s",
+			strings.Repeat("-", consts.LineCharCount),
+			w.Title,
+			strings.Repeat("-", consts.LineCharCount),
+			fmt.Sprintf(
+				"--实时速度: %.2f 钱包/秒 生成:%d 找到:%d",
+				w.runStatus.Speed(),
+				w.runStatus.TotalCount.Load(),
+				w.runStatus.FoundCount.Load(),
+			),
+			*w.outputString.Load(),
+		)
 	}
 }
 

@@ -21,7 +21,7 @@ func IPV4() string {
 }
 
 func GetMatchConfig(server string) (*models.MatchConfig, *resty.Response, error) {
-	var vc *models.MatchConfig
-	resp, err := defaultClient.R().SetResult(vc).Get(server)
-	return vc, resp, err
+	var vc models.MatchConfig
+	resp, err := defaultClient.R().SetResult(&vc).Get(server)
+	return &vc, resp, err
 }

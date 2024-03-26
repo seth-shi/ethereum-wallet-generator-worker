@@ -72,7 +72,15 @@ func (m *Master) Run() error {
 	go m.StartWebServer()
 	go m.tickerSaveRunStatus()
 
-	for range time.Tick(time.Second * 1) {
+	var lastMinute = time.Now().Minute()
+	for ts := range time.Tick(time.Second) {
+
+		nowMinute := ts.Minute()
+		if nowMinute > lastMinute {
+			lastMinute = nowMinute
+			fmt.Print("\033[H\033[2J")
+		}
+
 		m.output(m.workerStatusManager.All())
 	}
 
