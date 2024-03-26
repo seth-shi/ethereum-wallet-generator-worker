@@ -3,17 +3,13 @@ package main
 import (
 	"errors"
 	"fmt"
-	"net/http"
-	"runtime"
-	"strings"
-	"time"
-
-	"github.com/go-resty/resty/v2"
 	"github.com/seth-shi/ethereum-wallet-generator-worker/internal/master"
-	"github.com/seth-shi/ethereum-wallet-generator-worker/internal/models"
 	"github.com/seth-shi/ethereum-wallet-generator-worker/internal/utils"
 	"github.com/seth-shi/ethereum-wallet-generator-worker/internal/worker"
 	"github.com/urfave/cli/v2"
+	"net/http"
+	"runtime"
+	"strings"
 )
 
 const (
@@ -106,8 +102,7 @@ var (
 			fmt.Printf("worker:[%s]启动中...\n", workerName)
 
 			// 从服务端获取配置
-			var mc models.MatchConfig
-			resp, err := resty.New().SetTimeout(time.Second * 3).R().SetResult(&mc).Get(serverHost)
+			mc, resp, err := utils.GetMatchConfig(serverHost)
 			if err != nil {
 				return err
 			}
@@ -116,7 +111,7 @@ var (
 				return errors.New(fmt.Sprintf("获取配置失败[%d]%s", resp.StatusCode(), resp.String()))
 			}
 
-			Worker, err = worker.NewWorker(serverHost, &mc, c, workerName)
+			Worker, err = worker.NewWorker(serverHost, mc, c, workerName)
 			return err
 		},
 		Action: func(cCtx *cli.Context) error {
