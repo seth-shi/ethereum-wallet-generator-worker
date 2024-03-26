@@ -7,13 +7,11 @@ import (
 	"io"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	tm "github.com/buger/goterm"
 	"github.com/gin-gonic/gin"
 	"github.com/samber/lo"
-	"github.com/seth-shi/ethereum-wallet-generator-worker/internal/consts"
 	"github.com/seth-shi/ethereum-wallet-generator-worker/internal/models"
 	"github.com/seth-shi/ethereum-wallet-generator-worker/internal/utils"
 )
@@ -77,23 +75,23 @@ func (m *Master) Run() error {
 func (m *Master) output(workers []*models.WorkStatusRequest) {
 
 	m.buildContent(workers)
-	if m.screenBuilder.NeedClearScreen {
-		tm.Clear()
-		m.screenBuilder.NeedClearScreen = false
-	}
-	tm.MoveCursor(0, 0)
-	_, _ = tm.Println(strings.Repeat("-", consts.LineCharCount))
-	_, _ = tm.Print(fmt.Sprintf(
-		"--版本号:%s\n--服务端:http://%s:%d?%s=%s\n",
-		m.runConfig.Version,
-		utils.IPV4(),
-		m.runConfig.Port,
-		consts.QueryKeyFieldName,
-		m.runConfig.key,
-	))
-	_, _ = tm.Println(strings.Repeat("-", consts.LineCharCount))
-	_, _ = tm.Println(m.screenBuilder.GetContent())
-	tm.Flush()
+	//if m.screenBuilder.NeedClearScreen {
+	//	tm.Clear()
+	//	m.screenBuilder.NeedClearScreen = false
+	//}
+	//tm.MoveCursor(0, 0)
+	//_, _ = tm.Println(strings.Repeat("-", consts.LineCharCount))
+	//_, _ = tm.Print(fmt.Sprintf(
+	//	"--版本号:%s\n--服务端:http://%s:%d?%s=%s\n",
+	//	m.runConfig.Version,
+	//	utils.IPV4(),
+	//	m.runConfig.Port,
+	//	consts.QueryKeyFieldName,
+	//	m.runConfig.key,
+	//))
+	//_, _ = tm.Println(strings.Repeat("-", consts.LineCharCount))
+	//_, _ = tm.Println(m.screenBuilder.GetContent())
+	//tm.Flush()
 }
 
 func (m *Master) buildContent(renderWorkers []*models.WorkStatusRequest) {
