@@ -6,7 +6,7 @@
 
 ## 注意
 * 生成之后的助记词是被加密的, 需要这样子解密
-* `wallet.csv` 文件中包含如下内容
+* `wallet.master.csv` 文件中包含如下内容 (如果`worker`机器因为网络等原因上报异常, 会保存在`worker`机器的`wallet.worker.csv`)
 ```text
 rmkcmvvaevdzupda," "看仓库readme说明解密"
 0x000Bb65F2e742F10492546bDaFD74F9BCEA427BD,nxI3NdxHKsIezLVu7UFBdkDM9pLLnEvgP/ZxlHtzq1ICtTDhhkKNCj8T1bAbyVKarh3wnYEng3hx1dPrxOEmYla9JO+OqIFTWc9VXdq8pay20DL+Kixy6mS3o4K0r11/Z3E5YQ==
