@@ -24,6 +24,11 @@ ethereum-wallet-generator-worker decrypt --key=rmkcmvvaevdzupda --data=Z8qTxdkhR
 ```
 
 ## 快开开始
+
+* 如果只有单机服务器, 可以先在服务器上运行`master`, 然后再运行`worker`
+* 建议使用`nohup`,`screen`,`supervisor`等来守护进程后台挂着运行
+* 然后可以用自己的手机(`Termux`), 笔记本电脑, 台式机等等加入成为`worker`
+
 ### 一键安装
 
 | 系统        | 命令                                                                                                                                                                                 |
