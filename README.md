@@ -17,7 +17,7 @@ ethereum-wallet-generator-worker decrypt --key=rmkcmvvaevdzupda --data=Z8qTxdkhR
 # 助记词 0-12 开始
 # glory helmet alter river mystery method fuel number acoustic address parade flavor
 # 助记词 0-12 结束
-# 你也可以分尅几次解密 (--limit=6 --offset=0)
+# 你也可以分几次解密, 使用参数`--limit=6 --offset=0`(分两次解密, 分两次保存, 安全+++)
 # 解密后之后保存好, 删除所有记录
 # 解密后之后保存好, 删除所有记录
 # 解密后之后保存好, 删除所有记录
