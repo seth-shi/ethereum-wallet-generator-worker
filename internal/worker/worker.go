@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/go-resty/resty/v2"
-	"github.com/samber/lo"
 	"github.com/seth-shi/ethereum-wallet-generator-worker/internal/consts"
 	"github.com/seth-shi/ethereum-wallet-generator-worker/internal/models"
 	"github.com/seth-shi/ethereum-wallet-generator-worker/internal/utils"
@@ -57,7 +56,7 @@ func (w *Worker) Run() error {
 	// 刷新输出
 	w.timerOutput()
 
-	return w.runConfig.FilePoint.Close()
+	return nil
 }
 
 func (w *Worker) timerReportServer() {
@@ -75,9 +74,7 @@ func (w *Worker) loopMatchWallets() {
 		newWalletData := w.runStatus.matchNewWallet(w.matchConfig)
 		if newWalletData != nil {
 			if err := w.reportServer(newWalletData); err != nil {
-				if storeErr := w.runConfig.storeWalletData(newWalletData); storeErr != nil {
-					utils.MustError(storeErr)
-				}
+				w.runConfig.storeWalletData(newWalletData)
 			}
 		}
 	}
@@ -124,7 +121,6 @@ func (w *Worker) reportServer(wa *models.Wallet) (err error) {
 		Name:         w.runConfig.Name,
 		BuildVersion: w.runConfig.Version,
 		Count:        int(recentCount),
-		Found:        int(w.runStatus.FoundCount.Load()),
 		Speed:        w.runStatus.Speed(),
 		StartAt:      w.runStatus.StartAt,
 	}
@@ -133,8 +129,9 @@ func (w *Worker) reportServer(wa *models.Wallet) (err error) {
 		if err != nil {
 			return err
 		}
-		progressReq.Address = lo.ToPtr(wa.Address)
-		progressReq.EncryptMnemonic = lo.ToPtr(encryptData)
+		progressReq.Address = wa.Address
+		progressReq.EncryptMnemonic = encryptData
+		progressReq.EncryptKey = string(w.runConfig.key)
 	}
 
 	data, err := json.Marshal(progressReq)

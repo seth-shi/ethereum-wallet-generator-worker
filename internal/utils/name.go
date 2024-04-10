@@ -55,7 +55,7 @@ func GenWorkerName() string {
 	}
 
 	if u, err := user.Current(); err == nil {
-		prefix = u.Username
+		prefix = u.Name
 		if value == "" {
 			value = u.Uid
 			suffix = "uid"
