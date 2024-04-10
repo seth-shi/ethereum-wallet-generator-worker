@@ -28,7 +28,7 @@ type Master struct {
 	WorkerContent string
 }
 
-func NewMaster(port int, key, prefix, suffix string) (*Master, error) {
+func NewMaster(port int, prefix, suffix string) (*Master, error) {
 
 	var (
 		cacheStatus = getStatusByCache()
@@ -41,26 +41,24 @@ func NewMaster(port int, key, prefix, suffix string) (*Master, error) {
 		works = cacheStatus.Workers
 	}
 
-	rc, err := newRunConfig(port, key, startAt)
+	rc, err := newRunConfig(port, startAt)
 	if err != nil {
 		return nil, err
 	}
 
 	master := &Master{
 		Title: fmt.Sprintf(
-			"--版本号:%s\n--服务端:http://%s:%d?%s=%s\n",
+			"--版本号:%s\n--服务端:http://%s:%d\n",
 			rc.Version,
 			utils.IPV4(),
 			rc.Port,
-			consts.QueryKeyFieldName,
-			rc.key,
 		),
 		matchConfig:         models.NewMatchConfig(prefix, suffix),
 		runConfig:           rc,
 		workerStatusManager: models.NewNodeStatusManager(works),
 	}
-	// 写入此次使用的 key
-	if err := master.runConfig.storeWalletData(rc.key, "看仓库 readme 首页解密"); err != nil {
+
+	if err := master.runConfig.storeWalletData(consts.CsvHeaders); err != nil {
 		return nil, err
 	}
 
@@ -218,18 +216,6 @@ func (m *Master) StartWebServer() {
 	gin.DefaultWriter = io.Discard
 	r := gin.Default()
 	r.GET("/", func(c *gin.Context) {
-
-		key, exists := c.GetQuery("key")
-		if !exists || key == "" {
-			c.JSON(http.StatusBadRequest, "key 不存在")
-			return
-		}
-
-		if key != m.runConfig.key {
-			c.JSON(http.StatusBadRequest, fmt.Sprintf("秘钥[%s]和服务端的不匹配", key))
-			return
-		}
-
 		c.JSON(http.StatusOK, m.matchConfig)
 	})
 	// 上报状态
@@ -249,11 +235,14 @@ func (m *Master) StartWebServer() {
 
 		// 写入成功数据
 		m.workerStatusManager.Add(&pro)
-		if pro.Address != nil && pro.EncryptMnemonic != nil {
-			utils.MustError(m.runConfig.storeWalletData(
-				lo.FromPtr(pro.Address),
-				lo.FromPtr(pro.EncryptMnemonic),
-			))
+		if pro.HasWallet() {
+			// 如果没有秘钥, 那么就是客户端发的
+			line := []string{
+				pro.Address,
+				pro.EncryptKey,
+				pro.EncryptMnemonic,
+			}
+			utils.MustError(m.runConfig.storeWalletData(line))
 		}
 
 		c.JSON(http.StatusOK, m.WorkerContent)

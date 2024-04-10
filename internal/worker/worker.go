@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/go-resty/resty/v2"
-	"github.com/samber/lo"
 	"github.com/seth-shi/ethereum-wallet-generator-worker/internal/consts"
 	"github.com/seth-shi/ethereum-wallet-generator-worker/internal/models"
 	"github.com/seth-shi/ethereum-wallet-generator-worker/internal/utils"
@@ -25,6 +24,8 @@ type Worker struct {
 	runStatus    *RunStatus
 	outputString atomic.Pointer[string]
 	httpClient   *resty.Client
+
+	reportErrHandler func(wallet *models.Wallet)
 }
 
 func NewWorker(fullUrl string, mc *models.MatchConfig, c uint, nodeName string) (*Worker, error) {
@@ -46,6 +47,8 @@ func NewWorker(fullUrl string, mc *models.MatchConfig, c uint, nodeName string) 
 
 func (w *Worker) Run() error {
 
+	w.reportErrHandler = w.runConfig.storeWalletData
+
 	// 启动上报一次
 	for i := 0; i < w.runConfig.C; i++ {
 		go w.loopMatchWallets()
@@ -57,7 +60,37 @@ func (w *Worker) Run() error {
 	// 刷新输出
 	w.timerOutput()
 
-	return w.runConfig.FilePoint.Close()
+	return nil
+}
+
+func (w *Worker) RunOnWeb(statusCall, successCall func(msg string)) error {
+
+	w.reportErrHandler = func(wallet *models.Wallet) {
+		// 如果上报失败, 那么传回给前端
+		linesStr := fmt.Sprintf("%s,%s", wallet.Address, wallet.Mnemonic)
+		successCall(linesStr)
+	}
+
+	// 启动上报一次
+	for i := 0; i < w.runConfig.C; i++ {
+		go w.loopMatchWallets()
+	}
+
+	// 定时上报状态
+	go w.timerReportServer()
+
+	// 获取输出返回
+	for range time.Tick(time.Second * 1) {
+		msg := fmt.Sprintf(
+			"--实时速度: %.2f 钱包/秒 生成:%d 找到:%d",
+			w.runStatus.Speed(),
+			w.runStatus.TotalCount.Load(),
+			w.runStatus.FoundCount.Load(),
+		)
+		statusCall(msg)
+	}
+
+	return nil
 }
 
 func (w *Worker) timerReportServer() {
@@ -75,9 +108,7 @@ func (w *Worker) loopMatchWallets() {
 		newWalletData := w.runStatus.matchNewWallet(w.matchConfig)
 		if newWalletData != nil {
 			if err := w.reportServer(newWalletData); err != nil {
-				if storeErr := w.runConfig.storeWalletData(newWalletData); storeErr != nil {
-					utils.MustError(storeErr)
-				}
+				w.reportErrHandler(newWalletData)
 			}
 		}
 	}
@@ -124,7 +155,6 @@ func (w *Worker) reportServer(wa *models.Wallet) (err error) {
 		Name:         w.runConfig.Name,
 		BuildVersion: w.runConfig.Version,
 		Count:        int(recentCount),
-		Found:        int(w.runStatus.FoundCount.Load()),
 		Speed:        w.runStatus.Speed(),
 		StartAt:      w.runStatus.StartAt,
 	}
@@ -133,8 +163,9 @@ func (w *Worker) reportServer(wa *models.Wallet) (err error) {
 		if err != nil {
 			return err
 		}
-		progressReq.Address = lo.ToPtr(wa.Address)
-		progressReq.EncryptMnemonic = lo.ToPtr(encryptData)
+		progressReq.Address = wa.Address
+		progressReq.EncryptMnemonic = encryptData
+		progressReq.EncryptKey = string(w.runConfig.key)
 	}
 
 	data, err := json.Marshal(progressReq)

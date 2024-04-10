@@ -60,9 +60,13 @@ func (n *WorkerStatusManager) Add(newStatus *WorkStatusRequest) {
 
 	key := newStatus.Name
 
+	if newStatus.HasWallet() {
+		newStatus.Found = 1
+	}
+
 	if oldStatus, exists := n.values[key]; exists {
-		newStatus.Found += oldStatus.Found
 		newStatus.Count += oldStatus.Count
+		newStatus.Found += oldStatus.Found
 	} else {
 		n.keys = append(n.keys, key)
 	}

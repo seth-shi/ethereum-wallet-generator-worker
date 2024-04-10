@@ -1,6 +1,5 @@
 package consts
 
 const (
-	QueryKeyFieldName = "key"
-	KeyLength         = 16
+	KeyLength = 16
 )
