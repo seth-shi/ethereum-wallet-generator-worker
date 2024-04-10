@@ -11,7 +11,7 @@ type WorkerStatusManager struct {
 	locker sync.RWMutex
 }
 
-func NewNodeStatusManager(workers []*WorkStatusRequest) *WorkerStatusManager {
+func NewWorkerStatusManager(workers []*WorkStatusRequest) *WorkerStatusManager {
 
 	manager := &WorkerStatusManager{
 		keys:   make([]string, 0, 1024),
@@ -33,11 +33,11 @@ func (n *WorkerStatusManager) All() []*WorkStatusRequest {
 	data := make([]*WorkStatusRequest, len(n.keys))
 	for i, k := range n.keys {
 
-		node, exists := n.values[k]
+		w, exists := n.values[k]
 		if !exists {
-			node = &WorkStatusRequest{}
+			w = &WorkStatusRequest{}
 		}
-		data[i] = node
+		data[i] = w
 	}
 
 	return data

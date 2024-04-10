@@ -55,7 +55,7 @@ func NewMaster(port int, prefix, suffix string) (*Master, error) {
 		),
 		matchConfig:         models.NewMatchConfig(prefix, suffix),
 		runConfig:           rc,
-		workerStatusManager: models.NewNodeStatusManager(works),
+		workerStatusManager: models.NewWorkerStatusManager(works),
 	}
 
 	if err := master.runConfig.storeWalletData(consts.CsvHeaders); err != nil {
@@ -105,8 +105,8 @@ func (m *Master) buildContent(renderWorkers []*models.WorkStatusRequest) string 
 	)
 
 	nowUnix := time.Now().Unix()
-	genCount = lo.SumBy(renderWorkers, func(node *models.WorkStatusRequest) uint64 {
-		return uint64(node.Count)
+	genCount = lo.SumBy(renderWorkers, func(ww *models.WorkStatusRequest) uint64 {
+		return uint64(ww.Count)
 	})
 	data := lo.Map(renderWorkers, func(item *models.WorkStatusRequest, i int) []string {
 		activeUnix := item.LastActiveAt.Unix()
