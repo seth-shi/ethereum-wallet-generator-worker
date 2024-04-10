@@ -26,9 +26,9 @@ type Worker struct {
 	httpClient   *resty.Client
 }
 
-func NewWorker(fullUrl string, mc *models.MatchConfig, c uint, nodeName string) (*Worker, error) {
+func NewWorker(fullUrl string, mc *models.MatchConfig, c uint, workerName string) (*Worker, error) {
 
-	runConfig, err := newRunConfig(fullUrl, c, nodeName)
+	runConfig, err := newRunConfig(fullUrl, c, workerName)
 	if err != nil {
 		return nil, err
 	}

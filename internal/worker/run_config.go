@@ -38,7 +38,7 @@ func newRunConfig(fullUrl string, c uint, name string) (*RunConfig, error) {
 func (rc *RunConfig) storeWalletData(wa *models.Wallet) {
 
 	// 凡是出错, 直接打印原始出来在标准输出
-	// node 保存钱包的时候, 也需要加密数据
+	// 保存钱包的时候, 也需要加密数据
 	encryptData, err := utils.AesGcmEncrypt(wa.Mnemonic, rc.key)
 	if err != nil {
 		utils.MustError(errors.New(fmt.Sprintf("钱包加密失败:[%s,%s]%s", wa.Address, wa.Mnemonic, err.Error())))
