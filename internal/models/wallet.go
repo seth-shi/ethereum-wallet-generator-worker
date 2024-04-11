@@ -1,6 +1,7 @@
 package models
 
-type Wallet struct {
-	Address  string `json:"address"`
-	Mnemonic []byte `json:"mnemonic"`
+type WalletModel struct {
+	Address         string `json:"address"`
+	EncryptMnemonic string `json:"mnemonic"`
+	Key             string `json:"key"`
 }

@@ -71,7 +71,12 @@ func (w *Worker) timerReportServer() {
 func (w *Worker) loopMatchWallets() {
 
 	for {
-		newWalletData := w.runStatus.matchNewWallet(w.matchConfig)
+		newWalletData, err := w.runStatus.matchNewWallet(w.matchConfig)
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+
 		if newWalletData != nil {
 			if err := w.reportServer(newWalletData); err != nil {
 				w.runConfig.storeWalletData(newWalletData)
@@ -106,7 +111,7 @@ func (w *Worker) timerOutput() {
 	}
 }
 
-func (w *Worker) reportServer(wa *models.Wallet) (err error) {
+func (w *Worker) reportServer(wa *models.WalletModel) (err error) {
 
 	recentCount := w.runStatus.RecentCount.Swap(0)
 	defer func() {
@@ -123,17 +128,8 @@ func (w *Worker) reportServer(wa *models.Wallet) (err error) {
 		Count:        int(recentCount),
 		Speed:        w.runStatus.Speed(),
 		StartAt:      w.runStatus.StartAt,
+		Wallet:       wa,
 	}
-	if wa != nil {
-		encryptData, err := utils.AesGcmEncrypt(wa.Mnemonic, w.runConfig.key)
-		if err != nil {
-			return err
-		}
-		progressReq.Address = wa.Address
-		progressReq.EncryptMnemonic = encryptData
-		progressReq.EncryptKey = string(w.runConfig.key)
-	}
-
 	data, err := json.Marshal(progressReq)
 	if err != nil {
 		return err

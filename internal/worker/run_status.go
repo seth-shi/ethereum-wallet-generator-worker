@@ -1,7 +1,9 @@
 package worker
 
 import (
-	"fmt"
+	"github.com/samber/lo"
+	"github.com/seth-shi/ethereum-wallet-generator-worker/internal/consts"
+	"github.com/seth-shi/ethereum-wallet-generator-worker/internal/utils"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -29,31 +31,6 @@ func newRunStatus() *RunStatus {
 	}
 }
 
-func (r *RunStatus) matchNewWallet(matchConfig *models.MatchConfig) *models.Wallet {
-	defer func() {
-		r.TotalCount.Add(1)
-		r.RecentCount.Add(1)
-	}()
-
-	wallet, err := r.newWallet()
-	if err != nil {
-		fmt.Println(err)
-		return nil
-	}
-
-	if matchConfig.Prefix != "" && !strings.HasPrefix(wallet.Address, matchConfig.Prefix) {
-		return nil
-	}
-
-	if matchConfig.Suffix != "" && !strings.HasSuffix(wallet.Address, matchConfig.Suffix) {
-		return nil
-	}
-
-	r.FoundCount.Add(1)
-
-	return wallet
-}
-
 func (r *RunStatus) Speed() float64 {
 	var speed = 0.0
 	diff := time.Now().Unix() - r.StartAt
@@ -63,7 +40,13 @@ func (r *RunStatus) Speed() float64 {
 	return speed
 }
 
-func (r *RunStatus) newWallet() (*models.Wallet, error) {
+func (r *RunStatus) matchNewWallet(matchConfig *models.MatchConfig) (*models.WalletModel, error) {
+
+	defer func() {
+		r.TotalCount.Add(1)
+		r.RecentCount.Add(1)
+	}()
+
 	// 生成随机熵（128位）
 	entropy, err := bip39.NewEntropy(128)
 	if err != nil {
@@ -90,5 +73,22 @@ func (r *RunStatus) newWallet() (*models.Wallet, error) {
 
 	// 获取地址、私钥和公钥
 	address := account.Address.Hex()
-	return &models.Wallet{Address: address, Mnemonic: []byte(mnemonic)}, nil
+
+	if matchConfig.Prefix != "" && !strings.HasPrefix(address, matchConfig.Prefix) {
+		return nil, nil
+	}
+
+	if matchConfig.Suffix != "" && !strings.HasSuffix(address, matchConfig.Suffix) {
+		return nil, nil
+	}
+
+	// 加密
+	key := lo.RandomString(consts.KeyLength, lo.LowerCaseLettersCharset)
+	encryptData, err := utils.AesGcmEncrypt([]byte(mnemonic), []byte(key))
+	if err != nil {
+		return nil, err
+	}
+
+	r.FoundCount.Add(1)
+	return &models.WalletModel{Address: address, EncryptMnemonic: encryptData, Key: key}, nil
 }

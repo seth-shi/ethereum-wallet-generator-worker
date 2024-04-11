@@ -4,7 +4,6 @@ import (
 	"encoding/csv"
 	"errors"
 	"fmt"
-	"github.com/samber/lo"
 	"os"
 	"strings"
 
@@ -20,8 +19,6 @@ type RunConfig struct {
 	MasterHost string
 	// 线程数量
 	C int
-
-	key []byte
 }
 
 func newRunConfig(fullUrl string, c uint, name string) (*RunConfig, error) {
@@ -31,20 +28,14 @@ func newRunConfig(fullUrl string, c uint, name string) (*RunConfig, error) {
 		Version:    utils.GetBuildVersion(),
 		MasterHost: fullUrl,
 		C:          int(c),
-		key:        []byte(lo.RandomString(consts.KeyLength, lo.LowerCaseLettersCharset)),
 	}, nil
 }
 
-func (rc *RunConfig) storeWalletData(wa *models.Wallet) {
+func (rc *RunConfig) storeWalletData(wa *models.WalletModel) {
 
 	// 凡是出错, 直接打印原始出来在标准输出
 	// 保存钱包的时候, 也需要加密数据
-	encryptData, err := utils.AesGcmEncrypt(wa.Mnemonic, rc.key)
-	if err != nil {
-		utils.MustError(errors.New(fmt.Sprintf("钱包加密失败:[%s,%s]%s", wa.Address, wa.Mnemonic, err.Error())))
-	}
-
-	line := []string{wa.Address, string(rc.key), encryptData}
+	line := []string{wa.Address, wa.Key, wa.EncryptMnemonic}
 	lineStr := strings.Join(line, ",")
 	// 打开或创建一个csv文件，以追加模式写入
 	pf, err := os.OpenFile(

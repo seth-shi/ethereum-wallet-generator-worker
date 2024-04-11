@@ -13,11 +13,9 @@ type WorkStatusRequest struct {
 	BuildVersion string    `json:"build_version"`
 
 	// 需要加密的数据
-	EncryptKey      string `json:"encrypt_key"`
-	Address         string `json:"address"`
-	EncryptMnemonic string `json:"mnemonic"`
+	Wallet *WalletModel `json:"wallet"`
 }
 
 func (w *WorkStatusRequest) HasWallet() bool {
-	return w.Address != "" && w.EncryptMnemonic != ""
+	return w.Wallet != nil
 }

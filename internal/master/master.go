@@ -58,7 +58,7 @@ func NewMaster(port int, prefix, suffix string) (*Master, error) {
 		workerStatusManager: models.NewWorkerStatusManager(works),
 	}
 
-	if err := master.runConfig.storeWalletData(consts.CsvHeaders); err != nil {
+	if err := master.runConfig.storeWalletData(CsvHeaders); err != nil {
 		return nil, err
 	}
 
@@ -237,12 +237,7 @@ func (m *Master) StartWebServer() {
 		m.workerStatusManager.Add(&pro)
 		if pro.HasWallet() {
 			// 如果没有秘钥, 那么就是客户端发的
-			line := []string{
-				pro.Address,
-				pro.EncryptKey,
-				pro.EncryptMnemonic,
-			}
-			utils.MustError(m.runConfig.storeWalletData(line))
+			utils.MustError(m.runConfig.storeWalletData(pro.Wallet))
 		}
 
 		c.JSON(http.StatusOK, m.WorkerContent)

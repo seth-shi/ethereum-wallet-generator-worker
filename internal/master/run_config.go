@@ -4,6 +4,7 @@ import (
 	"encoding/csv"
 	"errors"
 	"fmt"
+	"github.com/seth-shi/ethereum-wallet-generator-worker/internal/models"
 	"os"
 	"strings"
 	"time"
@@ -43,9 +44,10 @@ func newRunConfig(port int, startAt time.Time) (*RunConfig, error) {
 	}, nil
 }
 
-func (rc *RunConfig) storeWalletData(line []string) error {
+func (rc *RunConfig) storeWalletData(wa *models.WalletModel) error {
 
 	// 创建一个csv写入器
+	line := []string{wa.Address, wa.Key, wa.EncryptMnemonic}
 	writer := csv.NewWriter(rc.FilePoint)
 	// 循环写入数据
 	err := writer.Write(line)
