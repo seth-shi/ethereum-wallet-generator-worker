@@ -79,3 +79,17 @@ ethereum-wallet-generator-worker decrypt --key=rmkcmvvaevdzupda --data=Z8qTxdkhR
 
 ![运行图](assets/2.jpg)
 ![运行图](assets/3.jpg)
+
+## 性能验证
+
+默认仍为每次生成独立的 12 个助记词，并使用原来的首地址派生路径和大小写敏感匹配规则。生成循环使用 `btcec/v2` 派生地址，并在构造 EIP-55 校验和字符串前用地址字节筛掉不可能命中的候选。
+
+可用同一个进程对比原实现（`reference`）和当前实现（`optimized`）：
+
+```bash
+go test ./internal/worker -run '^$' -bench 'Benchmark(MatchNewWallet|GenerationStages)' -benchmem -count=5
+```
+
+`MatchNewWallet` 包含随机熵、助记词、BIP39 seed、HD 派生、地址匹配和计数，分别测量单线程及并行吞吐；使用极低命中率规则，不包含结果上报、加密和磁盘写入。`GenerationStages` 单独测量 seed 转换和新旧地址派生。运行基准时应避免同时执行其他 CPU 密集任务。
+
+BIP39 seed 转换仍保留 2048 轮 PBKDF2。完整流程的收益需要根据目标机器实测，不能直接用 HD 派生部分的加速比例估算。

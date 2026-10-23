@@ -8,8 +8,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/ethereum/go-ethereum/accounts"
-	hdwallet "github.com/miguelmota/go-ethereum-hdwallet"
 	"github.com/seth-shi/ethereum-wallet-generator-worker/internal/models"
 	"github.com/tyler-smith/go-bip39"
 )
@@ -54,25 +52,25 @@ func (r *RunStatus) matchNewWallet(matchConfig *models.MatchConfig) (*models.Wal
 	}
 
 	// 根据熵生成助记词
-	mnemonic, _ := bip39.NewMnemonic(entropy)
+	mnemonic, err := bip39.NewMnemonic(entropy)
+	if err != nil {
+		return nil, err
+	}
 
 	// 使用助记词生成种子
 	seed := bip39.NewSeed(mnemonic, "")
 
-	// 创建 HD 钱包
-	hdWallet, err := hdwallet.NewFromSeed(seed)
+	// Derive only the address; no wallet/account wrapper is needed per candidate.
+	accountAddress, err := deriveAddress(seed)
 	if err != nil {
 		return nil, err
 	}
 
-	// 指定路径生成 ETH 地址
-	account, err := hdWallet.Derive(accounts.DefaultBaseDerivationPath, false)
-	if err != nil {
-		return nil, err
+	if !mayMatchAddress(accountAddress, matchConfig.Prefix, matchConfig.Suffix) {
+		return nil, nil
 	}
-
-	// 获取地址、私钥和公钥
-	address := account.Address.Hex()
+	// Only possible matches need the EIP-55 checksum and exact case check.
+	address := accountAddress.Hex()
 
 	if matchConfig.Prefix != "" && !strings.HasPrefix(address, matchConfig.Prefix) {
 		return nil, nil

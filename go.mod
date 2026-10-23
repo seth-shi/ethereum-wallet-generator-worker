@@ -3,6 +3,8 @@ module github.com/seth-shi/ethereum-wallet-generator-worker
 go 1.21.0
 
 require (
+	github.com/btcsuite/btcd v0.22.1
+	github.com/btcsuite/btcd/btcutil v1.1.0
 	github.com/ethereum/go-ethereum v1.10.17
 	github.com/gin-gonic/gin v1.9.1
 	github.com/go-resty/resty/v2 v2.11.0
@@ -14,7 +16,6 @@ require (
 )
 
 require (
-	github.com/btcsuite/btcd v0.22.1 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.2.0 // indirect
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.0.1 // indirect
 	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce // indirect
